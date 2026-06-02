@@ -1,5 +1,5 @@
-export const wsClients = new Set<any>();
-export const sessionClients = new Map<string, Set<any>>();
+import { wsClients, sessionClients, wsEventSequence } from "./ws-state.js";
+export { wsClients, sessionClients };
 
 import { 
   executeChatTurn, 
@@ -11,7 +11,7 @@ import {
   buildTurnLifecyclePayload 
 } from "../routes/chat.js";
 import { runWithTraceContext } from "../trace/context.js";
-import { sendSocketPayload, sendSocketEvent, replayEventsSince, broadcastEvent, wsEventSequence } from "./streaming.js";
+import { sendSocketPayload, sendSocketEvent, replayEventsSince, broadcastEvent } from "./streaming.js";
 import { listSessionMessages } from "../state/session.js";
 import { checkTokenLimit } from "../state/token-usage.js";
 import { storeClientValidationResult } from "../sandbox/runtime/client-validation-cache.js";
@@ -83,7 +83,7 @@ export function setupWebSocketHandler(wsServer: any) {
 
   sendSocketEvent(socket, "connection:ready", {
     backend: "js",
-    orchestration: "langgraph",
+    orchestration: "multi-agent",
     latestSeq: wsEventSequence
   });
 

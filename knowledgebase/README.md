@@ -1,6 +1,6 @@
 # Lumina Knowledgebase
 
-A comprehensive, browsable documentation of the Lumina AI STEM Tutoring Platform.
+A comprehensive, browsable documentation of the Lumina Generative Visual Intelligence Engine.
 
 ## Contents
 
@@ -32,42 +32,61 @@ Opens at http://localhost:8080
 
 ## Project Overview
 
-**Lumina** is an AI STEM tutoring platform that helps users learn concepts through a visual-first paradigm.
+**Lumina** is a generative visual intelligence engine that creates complex 3D scenes, 2D sketches, data visualizations, and cinematic animations from natural language prompts.
 
 ### Key Features
-- **Multi-Skill Support**: Three.js (3D), p5.js (2D), D3.js (data viz)
-- **Multi-Agent Swarm**: Conductor, Planner, Diagnosis, Pedagogy, Content, Visual agents
-- **Real-Time**: WebSocket-first with streaming updates
-- **Secure**: Daytona sandbox execution with circuit breaker protection
+- **Natural Language to Visuals** — Describe what you want, get a working scene or video
+- **Multi-Skill Pipeline** — Three.js (3D), p5.js (2D), D3.js (data viz), Anime.js (motion), Manim (cinematic video)
+- **Real-Time Streaming** — Watch code generate and render live
+- **Agentic Iteration** — Autonomous quality scoring, patching, and retry loops
+- **Secure Execution** — Isolated Daytona sandboxes for non-JS runtimes; JS renders client-side
+- **Version Control** — Save, compare, undo, redo, and restore scene versions and artifacts
+- **Multi-Provider LLM** — Failover across Moonshot, Fireworks (Kimi/DeepSeek), Groq, Gemini, and Gradient
+- **Clerk Authentication** — Sign-in required for sessions; dev bypass available
 
 ### Architecture
 ```
-Client (React) ←→ WebSocket Gateway ←→ Swarm Orchestrator ←→ Sandbox Pool (Daytona)
+User Prompt
+    ↓
+Intent Parser → Skill Selector → Agent Orchestrator (LangGraph)
+    ↓
+Code Generator → Validator → Quality Analyzer → (Autonomous Patcher)
+    ↓
+Skill Runtime → Daytona Sandbox (Manim/Python) or Client Renderer (JS)
+    ↓
+State Sync → WebSocket → React Frontend
 ```
 
 ## Technology Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React 19, TypeScript 6, Vite 8, Tailwind CSS 4 |
-| Backend | Express 5, WebSocket (ws), LangGraph |
-| LLM | Moonshot, DeepSeek, Groq, Gemini, Together |
-| Sandboxes | Daytona SDK |
-| 3D | Three.js 0.180.0 |
+| Component | Technology |
+|-----------|------------|
+| Frontend | React 19, TypeScript, Vite, Tailwind CSS v4, TanStack Router, Zustand |
+| Landing | React 19, TypeScript, Vite, Tailwind CSS v3, GSAP |
+| Backend | Express 5, WebSocket, TypeScript (ESM), LangGraph, SQLite |
+| Auth | Clerk (`@clerk/express` + `@clerk/clerk-react`) |
+| 3D / 2D | Three.js, p5.js, D3.js, Anime.js |
+| Video | Manim (Python, Daytona sandbox) |
+| Sandbox | Daytona |
+| Database | SQLite (`better-sqlite3`) + Supabase (cloud) |
+| LLM | Moonshot, Fireworks (Kimi/DeepSeek), Groq, Gemini, Gradient |
+| State Sync | WebSocket + Zustand |
 
 ## Project Structure
 
 ```
-lumina/
 ├── apps/
-│   ├── web/              # React frontend
-│   └── server/           # Express + WebSocket backend
+│   ├── server/          # Express + WebSocket backend (TypeScript, ESM)
+│   │   └── server/      # Core logic: routes, agents, skills, sandbox, state, db
+│   ├── web/             # React 19 + Vite frontend (TypeScript, Tailwind v4)
+│   │   ├── src/pages/   # Chat, Scenes, Sessions, Tasks, Profile, Auth
+│   │   ├── src/stores/  # Zustand state management
+│   │   └── src/routes/  # TanStack Router setup
+│   └── landing/         # Marketing landing page (React 19 + Vite + Tailwind v3)
 ├── packages/
-│   ├── sandbox-pool/    # Daytona SDK integration
-│   └── shared/          # Shared types & utilities
-├── docs/                # Architecture documents
-├── knowledgebase/       # This knowledgebase
-└── sdp/              # System design document
+│   ├── shared/           # @visual-runtime/shared — shared types + API client
+│   └── sandbox-pool/     # @visual-runtime/sandbox-pool — Daytona SDK integration
+└── knowledgebase/        # This knowledgebase
 ```
 
 ## License

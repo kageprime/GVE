@@ -31,7 +31,7 @@ server.on("upgrade", (request, socket, head) => {
 });
 
 server.listen(port, () => {
-    console.log(`GVE JS backend listening on http://localhost:${port}`);
+    console.log(`The Dosco Generative Engine backend is listening on http://localhost:${port}`);
     warmUpRegistry();
   });
 

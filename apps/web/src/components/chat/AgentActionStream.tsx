@@ -9,25 +9,22 @@ import {
   Pencil,
   Loader2,
   Search,
-  Clock,
   AlertCircle,
   CheckCircle2,
   Globe,
   Wrench,
   Eye,
   Sparkles,
-  X,
-  ExternalLink,
+  FileCode,
   type LucideIcon,
 } from "lucide-react";
 import type { ThoughtItem } from "./MessageComponents";
-import { AiOrb } from "./AiOrb";
+import { useChatStore } from "../../stores";
+import { ToolResultCard } from "./tool-results";
 
 interface AgentActionStreamProps {
   thoughts: ThoughtItem[];
   isThinking?: boolean;
-  thinkingDuration?: number;
-  onActionClick?: (action: AgentActionItem) => void;
 }
 
 export type ActionCategory =
@@ -60,6 +57,35 @@ export interface AgentActionItem {
   filePath?: string;
   searchQuery?: string;
 }
+
+/* ── Phase Configuration ─────────────────────────────────── */
+
+export type AgentPhase =
+  | "planning"
+  | "coding"
+  | "validation"
+  | "execution"
+  | "complete"
+  | "error"
+  | "unknown";
+
+interface PhaseConfig {
+  label: string;
+  color: string;
+  bg: string;
+  icon: LucideIcon;
+  order: number;
+}
+
+export const PHASE_CONFIG: Record<AgentPhase, PhaseConfig> = {
+  planning: { label: "Planning", color: "#a78bfa", bg: "rgba(167, 139, 250, 0.06)", icon: Brain, order: 1 },
+  coding: { label: "Coding", color: "#38bdf8", bg: "rgba(56, 189, 248, 0.06)", icon: FileCode, order: 2 },
+  validation: { label: "Validation", color: "#fbbf24", bg: "rgba(251, 191, 36, 0.06)", icon: CheckCircle2, order: 3 },
+  execution: { label: "Execution", color: "#34d399", bg: "rgba(52, 211, 153, 0.06)", icon: Sparkles, order: 4 },
+  complete: { label: "Complete", color: "#34d399", bg: "rgba(52, 211, 153, 0.06)", icon: CheckCircle2, order: 5 },
+  error: { label: "Error", color: "#f87171", bg: "rgba(248, 113, 113, 0.06)", icon: AlertCircle, order: 6 },
+  unknown: { label: "Working", color: "#9ca3af", bg: "rgba(156, 163, 175, 0.04)", icon: Wrench, order: 99 },
+};
 
 /* ── Category Configuration ─────────────────────────────── */
 
@@ -164,6 +190,27 @@ export const CATEGORY_CONFIG: Record<ActionCategory, CategoryConfig> = {
     ansiColor: "#9ca3af",
   },
 };
+
+/* ── Phase Derivation ───────────────────────────────────── */
+
+export function derivePhase(step: string, toolName?: string | null): AgentPhase {
+  if (step === "turn_started") return "planning";
+  if (step === "agent_thinking" && (!toolName || toolName === "planner")) return "planning";
+  if (step === "agent_tool_called" && toolName === "planner") return "planning";
+  if (step === "agent_tool_result" && toolName === "planner") return "planning";
+  if (step === "agent_thinking" && toolName === "coder") return "coding";
+  if (step === "agent_tool_called" && toolName === "coder") return "coding";
+  if (step === "agent_tool_result" && toolName === "coder") return "coding";
+  if (step === "code_generated" || step === "generating_code") return "coding";
+  if (step === "agent_tool_called" && toolName === "validator") return "validation";
+  if (step === "agent_tool_result" && toolName === "validator") return "validation";
+  if (step === "validation_failed") return "validation";
+  if (step === "agent_tool_called" && toolName === "executor") return "execution";
+  if (step === "agent_tool_result" && toolName === "executor") return "execution";
+  if (step === "turn_complete") return "complete";
+  if (step === "turn_error" || step === "turn_aborted") return "error";
+  return "unknown";
+}
 
 /* ── Detection ─────────────────────────────────────────── */
 
@@ -279,6 +326,41 @@ export function buildAgentActions(thoughts: ThoughtItem[]): AgentActionItem[] {
   });
 }
 
+/* ── Phase Grouping ───────────────────────────────────── */
+
+interface PhaseGroup {
+  phase: AgentPhase;
+  actions: AgentActionItem[];
+  status: ActionStatus;
+}
+
+export function groupActionsIntoPhases(actions: AgentActionItem[], thoughts: ThoughtItem[]): PhaseGroup[] {
+  const groups = new Map<AgentPhase, PhaseGroup>();
+
+  for (let i = 0; i < actions.length; i++) {
+    const action = actions[i];
+    const thought = thoughts[i];
+    const phase = derivePhase(thought?.step ?? "unknown", thought?.toolName ?? null);
+
+    if (!groups.has(phase)) {
+      groups.set(phase, { phase, actions: [], status: "completed" });
+    }
+    const group = groups.get(phase)!;
+    group.actions.push(action);
+    if (action.status === "running" || action.status === "pending") {
+      group.status = "running";
+    } else if (action.status === "failed" && group.status !== "running") {
+      group.status = "failed";
+    }
+  }
+
+  return Array.from(groups.values()).sort((a, b) => {
+    const orderA = PHASE_CONFIG[a.phase].order;
+    const orderB = PHASE_CONFIG[b.phase].order;
+    return orderA - orderB;
+  });
+}
+
 /* ── Sub-components ───────────────────────────────────── */
 
 export function StatusIcon({ status }: { status: ActionStatus | "success" | "error" }) {
@@ -335,285 +417,282 @@ export function SearchQueryBadge({ query }: { query: string }) {
   );
 }
 
-/* ── Detail Overlay (opens on action click) ────────────── */
+/* ── Phase Bar ─────────────────────────────────────────── */
 
-function ActionDetailOverlay({ action, onClose }: { action: AgentActionItem; onClose: () => void }) {
-  const config = CATEGORY_CONFIG[action.type];
+export function PhasePill({
+  phase,
+  status,
+  isActive,
+  actionCount,
+  onClick,
+}: {
+  phase: AgentPhase;
+  status: ActionStatus;
+  isActive: boolean;
+  actionCount: number;
+  onClick?: () => void;
+}) {
+  const config = PHASE_CONFIG[phase];
   const Icon = config.icon;
+  const isRunning = status === "running" || status === "pending";
+  const isFailed = status === "failed";
+  const isCompleted = status === "completed";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-6" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-      <div
-        className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-white/[0.08] bg-[#1a1a1e]/95 backdrop-blur-xl shadow-2xl animate-[scale-in_0.25s_cubic-bezier(0.34,1.56,0.64,1)]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center gap-3 border-b border-white/[0.06] px-5 py-4">
+    <button
+      type="button"
+      onClick={onClick}
+      className={`group relative flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-all duration-200 ${
+        isActive
+          ? "border-white/[0.10] bg-white/[0.06] text-white/80"
+          : isCompleted
+            ? "border-white/[0.04] bg-white/[0.02] text-white/40 hover:bg-white/[0.04] hover:text-white/60"
+            : isFailed
+              ? "border-red-400/15 bg-red-400/6 text-red-300/60 hover:bg-red-400/10"
+              : "border-white/[0.04] bg-white/[0.02] text-white/40 hover:bg-white/[0.04]"
+      }`}
+    >
+      <div className="relative flex h-3.5 w-3.5 items-center justify-center">
+        {isRunning && (
           <div
-            className="flex h-8 w-8 items-center justify-center rounded-xl"
-            style={{ backgroundColor: config.bg }}
-          >
-            <Icon className="h-4 w-4" style={{ color: config.color }} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-[13px] font-semibold text-white/90">{config.label}</div>
-            {action.durationMs != null && action.durationMs > 0 && (
-              <div className="text-[11px] text-white/35 font-mono">
-                {action.durationMs < 1000 ? `${action.durationMs}ms` : `${(action.durationMs / 1000).toFixed(1)}s`}
-              </div>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-white/40 transition hover:bg-white/[0.06] hover:text-white/70"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        {/* Body */}
-        <div className="px-5 py-4 space-y-4 max-h-[60vh] overflow-y-auto scrollbar">
-          {/* Rich context */}
-          {action.command && (
-            <div className="rounded-xl bg-black/30 border border-white/[0.05] px-4 py-3">
-              <div className="text-[10px] uppercase tracking-wider text-white/30 mb-2">Command</div>
-              <TerminalCommand command={action.command} />
-            </div>
-          )}
-
-          {action.filePath && (
-            <div className="rounded-xl bg-black/30 border border-white/[0.05] px-4 py-3">
-              <div className="text-[10px] uppercase tracking-wider text-white/30 mb-2">File</div>
-              <FilePathBadge
-                path={action.filePath}
-                operation={action.type === "file_create" ? "create" : action.type === "file_read" ? "read" : action.type === "file_write" ? "write" : "edit"}
-              />
-            </div>
-          )}
-
-          {action.searchQuery && (
-            <div className="rounded-xl bg-black/30 border border-white/[0.05] px-4 py-3">
-              <div className="text-[10px] uppercase tracking-wider text-white/30 mb-2">Search Query</div>
-              <div className="flex items-center gap-2">
-                <Search className="h-3.5 w-3.5 text-amber-400/60" />
-                <span className="text-[13px] text-white/70">{action.searchQuery}</span>
-              </div>
-            </div>
-          )}
-
-          {/* Full text */}
-          <div>
-            <div className="text-[10px] uppercase tracking-wider text-white/30 mb-2">Details</div>
-            <p className="text-[13px] leading-relaxed text-white/65 whitespace-pre-wrap">{action.text}</p>
-          </div>
-
-          {action.detail && (
-            <div>
-              <div className="text-[10px] uppercase tracking-wider text-white/30 mb-2">Output</div>
-              <pre className="rounded-xl bg-black/30 border border-white/[0.05] px-4 py-3 font-mono text-[11px] text-white/50 overflow-x-auto whitespace-pre-wrap">
-                {action.detail}
-              </pre>
-            </div>
-          )}
-        </div>
+            className="absolute h-3.5 w-3.5 rounded-full animate-ping opacity-20"
+            style={{ backgroundColor: config.color }}
+          />
+        )}
+        <Icon
+          className={`h-3 w-3 transition-all ${isActive ? "opacity-100" : "opacity-50"}`}
+          style={{ color: isFailed ? "#f87171" : config.color }}
+        />
       </div>
+      <span>{config.label}</span>
+      {actionCount > 1 && (
+        <span className="text-[10px] text-white/20 ml-0.5">{actionCount}</span>
+      )}
+      {isCompleted && !isActive && (
+        <CheckCircle2 className="h-2.5 w-2.5 text-emerald-400/40 ml-0.5" />
+      )}
+      {isFailed && (
+        <AlertCircle className="h-2.5 w-2.5 text-red-400/60 ml-0.5" />
+      )}
+    </button>
+  );
+}
+
+/* ── Action Row ─────────────────────────────────────────── */
+
+function ActionRow({
+  action,
+  isExpanded,
+  onToggleExpand,
+}: {
+  action: AgentActionItem;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
+}) {
+  const config = CATEGORY_CONFIG[action.type];
+  const Icon = config.icon;
+  const isActive = action.status === "running" || action.status === "pending";
+
+  return (
+    <button
+      type="button"
+      onClick={onToggleExpand}
+      className="group relative flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-all duration-200 hover:bg-white/[0.04] active:scale-[0.995]"
+    >
+      {/* Category icon */}
+      <div className="relative z-10 flex h-5 w-5 shrink-0 items-center justify-center">
+        {isActive && (
+          <div
+            className="absolute h-5 w-5 rounded-full animate-ping opacity-15"
+            style={{ backgroundColor: config.color }}
+          />
+        )}
+        <Icon
+          className={`h-3.5 w-3.5 transition-all duration-300 ${isActive ? "opacity-100" : "opacity-50"}`}
+          style={{ color: config.color }}
+        />
+      </div>
+
+      {/* Content */}
+      <div className="flex min-w-0 flex-1 items-center gap-1.5">
+        <span
+          className={`shrink-0 text-[12.5px] font-medium transition-colors duration-200 ${isActive ? "text-white/85" : "text-white/55"}`}
+        >
+          {config.label}
+        </span>
+        {action.context && (
+          <>
+            <span className="shrink-0 text-[12px] text-white/15 select-none">·</span>
+            <span className="truncate text-[11.5px] text-white/35 font-mono">
+              {action.type === "command" && action.command ? (
+                <span className="flex items-center gap-1">
+                  <span className="text-white/20">$</span>
+                  <span className="truncate">{action.command.slice(0, 45)}</span>
+                </span>
+              ) : action.type === "search" && action.searchQuery ? (
+                <SearchQueryBadge query={action.searchQuery} />
+              ) : action.type.startsWith("file_") && action.filePath ? (
+                <FilePathBadge
+                  path={action.filePath}
+                  operation={action.type === "file_create" ? "create" : action.type === "file_read" ? "read" : action.type === "file_write" ? "write" : "edit"}
+                />
+              ) : (
+                action.context
+              )}
+            </span>
+          </>
+        )}
+      </div>
+
+      {/* Right side */}
+      <div className="flex shrink-0 items-center gap-1.5">
+        {action.durationMs != null && action.durationMs > 0 && (
+          <span className="text-[10px] font-mono text-white/20">
+            {action.durationMs < 1000 ? `${action.durationMs}ms` : `${(action.durationMs / 1000).toFixed(1)}s`}
+          </span>
+        )}
+        {action.status === "running" && (
+          <Loader2 className="h-3 w-3 animate-spin text-white/30" />
+        )}
+        {action.status === "failed" && (
+          <AlertCircle className="h-3 w-3 text-red-400/50" />
+        )}
+        <ChevronRight className={`h-3 w-3 text-white/15 transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`} />
+      </div>
+    </button>
+  );
+}
+
+/* ── Rich Action Row with Expandable Tool Results ──────── */
+
+function RichActionRow({
+  action,
+  rawResult,
+}: {
+  action: AgentActionItem;
+  rawResult?: import("../../stores/chat/types").ToolRawResult | null;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="flex flex-col">
+      <ActionRow
+        action={action}
+        isExpanded={expanded}
+        onToggleExpand={() => setExpanded(!expanded)}
+      />
+      {expanded && rawResult && (
+        <div className="px-2 pb-2">
+          <div className="rounded-xl border border-white/[0.04] bg-white/[0.015] p-3 mt-0.5">
+            <ToolResultCard rawResult={rawResult} compact />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 /* ── Main Component ─────────────────────────────────────── */
 
-export function AgentActionStream({ thoughts, isThinking = false, onActionClick }: AgentActionStreamProps) {
-  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-  const [detailAction, setDetailAction] = useState<AgentActionItem | null>(null);
+export function AgentActionStream({ thoughts, isThinking = false }: AgentActionStreamProps) {
+  const [expandedPhase, setExpandedPhase] = useState<string | null>(null);
+  const agentToolLog = useChatStore((state) => state.agentToolLog);
 
-  const toggleRow = useCallback((id: string) => {
-    setExpandedRows((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
+  const actions = useMemo(() => buildAgentActions(thoughts), [thoughts]);
+  const phases = useMemo(() => groupActionsIntoPhases(actions, thoughts), [actions, thoughts]);
 
-  const rows = useMemo<AgentActionItem[]>(() => buildAgentActions(thoughts), [thoughts]);
+  // Map actions to their rich tool results from the agent tool log
+  const actionRawResults = useMemo(() => {
+    const map = new Map<string, import("../../stores/chat/types").ToolRawResult | null>();
+    for (const action of actions) {
+      // Match by tool name: action type (search, file_create, etc.) maps to tool name (web_search, coder, etc.)
+      const entry = agentToolLog.find((log) => {
+        if (log.tool === action.type) return true;
+        if (action.type === "search" && log.tool === "web_search") return true;
+        if (action.type === "command" && log.tool === "executor") return true;
+        if (action.type === "file_create" && log.tool === "coder") return true;
+        if (action.type === "media" && log.tool === "executor") return true;
+        if (action.type === "preview" && log.tool === "executor") return true;
+        return false;
+      });
+      map.set(action.id, entry?.rawResult ?? null);
+    }
+    return map;
+  }, [actions, agentToolLog]);
+
+  const visiblePhase = useMemo(() => {
+    if (expandedPhase !== null) {
+      const found = phases.find((p) => p.phase === expandedPhase);
+      if (found) return expandedPhase;
+    }
+    const runningIdx = phases.findIndex((p) => p.status === "running" || p.status === "pending");
+    if (runningIdx >= 0) return phases[runningIdx].phase;
+    if (phases.length > 0 && phases[phases.length - 1].phase === "complete") return phases[phases.length - 1].phase;
+    return phases.length > 0 ? phases[phases.length - 1].phase : null;
+  }, [phases, expandedPhase]);
+
+  const visiblePhaseGroup = visiblePhase ? phases.find((p) => p.phase === visiblePhase) : null;
+
+  const handlePhaseClick = useCallback(
+    (phaseId: string) => {
+      setExpandedPhase((prev) => (prev === phaseId ? null : phaseId));
+    },
+    []
+  );
+
+  const handleActionClick = useCallback(
+    (phaseId: string) => {
+      handlePhaseClick(phaseId);
+    },
+    [handlePhaseClick]
+  );
 
   if (thoughts.length === 0 && !isThinking) return null;
 
   return (
-    <>
-      <div className="my-3 select-none">
-        <div className="relative overflow-hidden rounded-2xl transition-all duration-300">
-          {/* Processing header */}
-          <div className="flex items-center gap-2.5 px-1 py-2">
-            <AiOrb size={isThinking ? 22 : 16} className="transition-all duration-500" />
+    <div className="my-3 select-none">
+      {/* Phase Bar */}
+      {phases.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5 mb-2">
+          {phases.map((phaseGroup) => (
+            <PhasePill
+              key={phaseGroup.phase}
+              phase={phaseGroup.phase}
+              status={phaseGroup.status}
+              isActive={phaseGroup.phase === visiblePhase}
+              actionCount={phaseGroup.actions.length}
+              onClick={() => handlePhaseClick(phaseGroup.phase)}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Current phase expanded actions */}
+      {visiblePhaseGroup && (
+        <div className="relative overflow-hidden rounded-2xl border border-white/[0.04] bg-white/[0.01] transition-all duration-300">
+          <div className="flex items-center gap-2 px-3 py-2 border-b border-white/[0.03]">
             <span
-              className={`text-[12.5px] font-medium transition-all duration-300 ${
-                isThinking
-                  ? "text-white/70"
-                  : "text-white/30"
-              }`}
+              className="text-[10px] font-medium uppercase tracking-wider"
+              style={{ color: PHASE_CONFIG[visiblePhaseGroup.phase].color, opacity: 0.7 }}
             >
-              {isThinking ? "Processing" : rows.length > 0 ? "Processed" : ""}
+              {PHASE_CONFIG[visiblePhaseGroup.phase].label}
             </span>
-            {isThinking && (
-              <span className="flex gap-[3px] items-center ml-0.5">
-                <span className="h-[3px] w-[3px] rounded-full bg-white/40 animate-[pulse-dot_1.4s_ease-in-out_infinite]" />
-                <span className="h-[3px] w-[3px] rounded-full bg-white/40 animate-[pulse-dot_1.4s_ease-in-out_0.2s_infinite]" />
-                <span className="h-[3px] w-[3px] rounded-full bg-white/40 animate-[pulse-dot_1.4s_ease-in-out_0.4s_infinite]" />
-              </span>
-            )}
+            <span className="text-[10px] text-white/20">
+              {visiblePhaseGroup.actions.length} action
+              {visiblePhaseGroup.actions.length !== 1 ? "s" : ""}
+            </span>
           </div>
-
-          {/* Action rows */}
-          <div className="relative flex flex-col gap-0.5 px-0.5">
-            {rows.map((row, idx) => {
-              const config = CATEGORY_CONFIG[row.type];
-              const isExpanded = expandedRows.has(row.id);
-              const Icon = config.icon;
-              const isActive = row.status === "running" || row.status === "pending";
-
-              return (
-                <div key={row.id} className="flex flex-col">
-                  <button
-                    type="button"
-                    onClick={() => toggleRow(row.id)}
-                    className="group relative flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-all duration-200 hover:bg-white/[0.04] active:scale-[0.995] animate-[row-fade_0.3s_cubic-bezier(0.34,1.56,0.64,1)_both]"
-                    style={{ animationDelay: `${Math.min(idx * 35, 250)}ms` }}
-                    aria-expanded={isExpanded}
-                  >
-                    {/* Category icon */}
-                    <div className="relative z-10 flex h-5 w-5 shrink-0 items-center justify-center">
-                      {isActive && (
-                        <div
-                          className="absolute h-5 w-5 rounded-full animate-ping opacity-15"
-                          style={{ backgroundColor: config.color }}
-                        />
-                      )}
-                      <Icon
-                        className={`h-3.5 w-3.5 transition-all duration-300 ${isActive ? "opacity-100" : "opacity-50"}`}
-                        style={{ color: config.color }}
-                      />
-                    </div>
-
-                    {/* Content */}
-                    <div className="flex min-w-0 flex-1 items-center gap-1.5">
-                      <span
-                        className={`shrink-0 text-[12.5px] font-medium transition-colors duration-200 ${isActive ? "text-white/85" : "text-white/55"}`}
-                      >
-                        {config.label}
-                      </span>
-                      {row.context && (
-                        <>
-                          <span className="shrink-0 text-[12px] text-white/15 select-none">·</span>
-                          <span className="truncate text-[11.5px] text-white/35 font-mono">
-                            {row.type === "command" && row.command ? (
-                              <span className="flex items-center gap-1">
-                                <span className="text-white/20">$</span>
-                                <span className="truncate">{row.command.slice(0, 45)}</span>
-                              </span>
-                            ) : row.type === "search" && row.searchQuery ? (
-                              <SearchQueryBadge query={row.searchQuery} />
-                            ) : row.type.startsWith("file_") && row.filePath ? (
-                              <FilePathBadge
-                                path={row.filePath}
-                                operation={row.type === "file_create" ? "create" : row.type === "file_read" ? "read" : row.type === "file_write" ? "write" : "edit"}
-                              />
-                            ) : (
-                              row.context
-                            )}
-                          </span>
-                        </>
-                      )}
-                    </div>
-
-                    {/* Right side */}
-                    <div className="flex shrink-0 items-center gap-1.5">
-                      {row.durationMs != null && row.durationMs > 0 && (
-                        <span className="text-[10px] font-mono text-white/20">
-                          {row.durationMs < 1000 ? `${row.durationMs}ms` : `${(row.durationMs / 1000).toFixed(1)}s`}
-                        </span>
-                      )}
-                      {row.status === "running" && (
-                        <Loader2 className="h-3 w-3 animate-spin text-white/30" />
-                      )}
-                      {row.status === "failed" && (
-                        <AlertCircle className="h-3 w-3 text-red-400/50" />
-                      )}
-                      <ChevronRight
-                        className={`h-3 w-3 text-white/20 transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`}
-                      />
-                    </div>
-                  </button>
-
-                  {/* Expanded detail */}
-                  {isExpanded && (
-                    <div className="ml-8 mr-2 mb-1 overflow-hidden animate-[slide-up-fade_0.2s_ease-out]">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setDetailAction(row);
-                          onActionClick?.(row);
-                        }}
-                        className="group/detail w-full text-left rounded-xl px-3.5 py-3 text-[12px] leading-relaxed text-white/55 border border-white/[0.04] bg-white/[0.015] transition-all duration-200 hover:bg-white/[0.03] hover:border-white/[0.08] active:scale-[0.998]"
-                      >
-                        <div className="mb-2 flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Icon className="h-3.5 w-3.5" style={{ color: config.color, opacity: 0.7 }} />
-                            <span className="text-[10px] font-medium uppercase tracking-wider" style={{ color: config.color, opacity: 0.7 }}>
-                              {config.label}
-                            </span>
-                          </div>
-                          <ExternalLink className="h-3 w-3 text-white/20 opacity-0 group-hover/detail:opacity-100 transition-opacity" />
-                        </div>
-
-                        {row.command && <TerminalCommand command={row.command} />}
-                        {row.filePath && (
-                          <div className="mt-1.5">
-                            <FilePathBadge
-                              path={row.filePath}
-                              operation={row.type === "file_create" ? "create" : row.type === "file_read" ? "read" : row.type === "file_write" ? "write" : "edit"}
-                            />
-                          </div>
-                        )}
-                        {row.searchQuery && (
-                          <div className="mt-1.5">
-                            <SearchQueryBadge query={row.searchQuery} />
-                          </div>
-                        )}
-
-                        <p className="mt-2 whitespace-pre-wrap line-clamp-3">{row.text}</p>
-
-                        {row.detail && (
-                          <p className="mt-2 overflow-x-auto rounded-lg bg-black/20 px-2.5 py-2 font-mono text-[10.5px] text-white/35 line-clamp-4">
-                            {row.detail}
-                          </p>
-                        )}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-
-            {isThinking && (
-              <div className="flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 animate-[row-fade_0.3s_ease-out]">
-                <div className="relative z-10 flex h-5 w-5 shrink-0 items-center justify-center">
-                  <AiOrb size={18} />
-                </div>
-                <span className="text-[12.5px] font-medium text-white/50">Processing</span>
-              </div>
-            )}
+          <div className="relative flex flex-col gap-0.5 px-0.5 py-1">
+            {visiblePhaseGroup.actions.map((action) => (
+              <RichActionRow
+                key={action.id}
+                action={action}
+                rawResult={actionRawResults.get(action.id) ?? null}
+              />
+            ))}
           </div>
         </div>
-      </div>
-
-      {/* Detail overlay */}
-      {detailAction && (
-        <ActionDetailOverlay action={detailAction} onClose={() => setDetailAction(null)} />
       )}
-    </>
+    </div>
   );
 }

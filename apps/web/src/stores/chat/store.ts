@@ -48,8 +48,6 @@ export const useChatStore = create<ChatState>()(
           activeSessionId: state.activeSessionId,
           isSidebarCollapsed: state.isSidebarCollapsed,
           panelWidth: state.panelWidth,
-          sessions: state.sessions,
-          messages: state.messages,
         }),
         storage: storage as any,
       }

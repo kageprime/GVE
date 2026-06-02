@@ -11,7 +11,8 @@ import { broadcastEvent, broadcastThought } from "../../ws/streaming.js";
 import { buildAgentActivity } from "./agent-activity.js";
 import { buildAssistantMessageMeta } from "./turn-execution-helpers.js";
 import { buildTurnLifecyclePayload, buildTurnResultSummary } from "./turn-summary.js";
-import { executeToolTurn, createLlmProvider, type CoordinatorEvent } from "../../coordinator/tool-coordinator.js";
+import { CoordinatorAgent, type CoordinatorEvent } from "../../agents/coordinator-agent.js";
+import { getTraceContext } from "../../trace/context.js";
 
 export type AgentTurnParams = {
   sessionId: string;
@@ -50,24 +51,7 @@ export async function executeAgentTurnPath(params: AgentTurnParams) {
   const thoughtContextBase = { requestId: turnRequestId, messageId: assistantMessageId };
   const stepDurationsMs: Record<string, number> = {};
 
-  // Build user message for coordinator (text or multimodal)
-  let coordinatorUserMessage: string | Array<any> = content;
-  if (imageUrl || imageData) {
-    const resolvedImageUrl = imageUrl || (imageData ? `data:image/png;base64,${imageData}` : null);
-    if (resolvedImageUrl) {
-      coordinatorUserMessage = [
-        { type: "text", text: content },
-        { type: "image_url", image_url: { url: resolvedImageUrl, detail: "low" } }
-      ];
-    }
-  }
-
-  // Mode hint for modify — include current scene code so the LLM knows what to change
   const forcedMode = String(effectivePreferences?.mode ?? "").trim().toLowerCase();
-  if (forcedMode === "modify" && typeof coordinatorUserMessage === "string") {
-    const currentCode = sessionState?.currentScene?.code ?? "";
-    coordinatorUserMessage = `[MODE: MODIFY] The user wants to modify the existing scene. Do NOT create a new scene unless explicitly asked. Preserve existing functionality and only change what is requested.\n\nCurrent scene code:\n\`\`\`javascript\n${currentCode}\n\`\`\`\n\nUser instruction: ${coordinatorUserMessage}`;
-  }
 
   // ── Start ──
   broadcastEvent("turn:started", { sessionId, content, mode: "agent" });
@@ -109,7 +93,8 @@ export async function executeAgentTurnPath(params: AgentTurnParams) {
       );
       const dedicatedMgr = getDedicatedSandboxInstance();
       if (dedicatedMgr) {
-        dedicatedKey = `session:${sessionId}`;
+        const traceCtx = getTraceContext();
+        dedicatedKey = dedicatedMgr.getKey({ userId: traceCtx?.userId, sessionId }) ?? `session:${sessionId}`;
         daytonaEnv = await dedicatedMgr.acquireForKey(dedicatedKey, {
           skillId: "manim",
         });
@@ -117,23 +102,25 @@ export async function executeAgentTurnPath(params: AgentTurnParams) {
           daytonaEnv.workspaceId,
           daytonaEnv._workspace
         );
+
+        // Create session-scoped working directory
+        const sessionDir = `/home/user/projects/${sessionId}`;
+        try {
+          await daytonaEnv._workspace.process.executeCommand(`mkdir -p "${sessionDir}"`);
+        } catch {
+          // Best-effort directory creation
+        }
+
         setDaytonaWs(sessionId, {
           workspaceId: daytonaEnv.workspaceId,
           workspace: daytonaEnv._workspace,
           filesystem,
-          executeCommand: async (command: string, opts?: { timeoutMs?: number }) => {
-            const raw = await daytonaEnv._workspace.process.executeCommand(
-              command,
-              undefined,
-              undefined,
-              Math.ceil((opts?.timeoutMs ?? 30000) / 1000)
-            );
-            // Daytona SDK returns { result, exitCode }, not a plain string
-            return String(raw?.result ?? raw ?? "");
-          },
+          executeCommand: (cmd: string, opts?: { timeoutMs?: number }) => daytonaEnv._workspace.process.executeCommand(cmd, opts),
+          nativeFs: daytonaEnv._workspace.fs,
+          sessionDir,
         });
         console.log(
-          `[AgentTurn] Provisioned Daytona sandbox for ${sessionId}: workspace=${daytonaEnv.workspaceId}`
+          `[AgentTurn] Provisioned Daytona sandbox for ${sessionId}: workspace=${daytonaEnv.workspaceId} key=${dedicatedKey}`
         );
       }
     } catch (daytonaErr: any) {
@@ -175,28 +162,22 @@ export async function executeAgentTurnPath(params: AgentTurnParams) {
     }
   }
 
-  let recordedScene: any = null;
-
-  // ── Execute tool turn with live event streaming ──
-  const result = await executeToolTurn({
-    sessionId,
-    userMessage: coordinatorUserMessage,
-    llmProvider: createLlmProvider({
-      preferredProviderId: effectivePreferences?.provider as string | undefined,
-      onToken: (token: string) => {
-        broadcastEvent("message.append", {
-          sessionId,
-          message: {
-            id: assistantMessageId,
-            role: "assistant",
-            content: token,
-            kind: "streaming"
-          }
-        });
-      }
-    }),
-    maxToolCalls: 5,
-    onEvent: async (event: CoordinatorEvent) => {
+  // ── Execute multi-agent turn with live event streaming ──
+  const { CoordinatorAgent } = await import("../../agents/coordinator-agent.js");
+  const coordinator = new CoordinatorAgent();
+  const result = await coordinator.runTurn(
+    {
+      sessionId,
+      query: content,
+      imageUrl,
+      imageData,
+      preferences: effectivePreferences,
+      sessionState,
+      assistantMessageId,
+      turnRequestId,
+      userMessage: content,
+    },
+    async (event: CoordinatorEvent) => {
       switch (event.type) {
         case "coordinator:thinking": {
           await broadcastThought(sessionId, "agent_thinking", {
@@ -231,7 +212,7 @@ export async function executeAgentTurnPath(params: AgentTurnParams) {
             ...thoughtContextBase,
             query: content,
             toolName: event.payload.name,
-            detail: event.payload.output.slice(0, 200),
+            detail: String(event.payload.output ?? "").slice(0, 200),
             llmThoughts: null
           });
           broadcastEvent("agent:activity", buildAgentActivity({
@@ -254,39 +235,9 @@ export async function executeAgentTurnPath(params: AgentTurnParams) {
             tool: event.payload.name,
             success: event.payload.success,
             output: event.payload.output,
-            durationMs: event.payload.durationMs
+            durationMs: event.payload.durationMs,
+            rawResult: event.payload.rawResult ?? null,
           });
-
-          // Extract scene code from animation tool results and record scene version.
-          // Matches animation_3js, animation_p5js, animation_manim tool outputs.
-          const animToolName = event.payload.name;
-          const isAnimationTool =
-            animToolName.startsWith("animation_") ||
-            animToolName === "create_scene" ||
-            animToolName === "edit_scene";
-          if (event.payload.success && isAnimationTool) {
-            try {
-              const parsed = JSON.parse(event.payload.output);
-              const hasCode = Boolean(parsed.code);
-              const hasMedia = Boolean(parsed.media_url || parsed.preview_url);
-              if (hasCode || hasMedia) {
-                const sceneSnapshot = {
-                  sceneId: parsed.file_path ?? `scene-${Date.now()}`,
-                  code: parsed.code ?? "",
-                  previewUrl: parsed.media_url ?? parsed.preview_url ?? null,
-                  outputKind: parsed.outputKind ?? (hasCode ? "code" : hasMedia ? "media" : null),
-                  skill: animToolName.includes("manim") ? "manim" : animToolName.includes("p5") ? "p5js" : "threejs",
-                  explanation: parsed.description ?? content,
-                  source: forcedMode === "modify" ? "modify" : "generate",
-                  messageId: assistantMessageId
-                };
-                recordedScene = recordSceneVersion(sessionId, sceneSnapshot);
-                broadcastEvent("scene:update", buildSceneUpdatePayload(sessionId));
-              }
-            } catch {
-              // Not JSON — ignore
-            }
-          }
           break;
         }
 
@@ -308,6 +259,20 @@ export async function executeAgentTurnPath(params: AgentTurnParams) {
               lines: event.payload.lines
             }
           }));
+          break;
+        }
+
+        case "coordinator:scene_ready": {
+          broadcastEvent("scene:update", {
+            sessionId,
+            scene: {
+              code: event.payload.code,
+              skill: event.payload.skill,
+              sceneId: event.payload.sceneId,
+              streaming: false,
+              streamingComplete: true,
+            },
+          });
           break;
         }
 
@@ -333,8 +298,19 @@ export async function executeAgentTurnPath(params: AgentTurnParams) {
           break;
         }
       }
+    },
+    (token: string) => {
+      broadcastEvent("message.append", {
+        sessionId,
+        message: {
+          id: assistantMessageId,
+          role: "assistant",
+          content: token,
+          kind: "streaming"
+        }
+      });
     }
-  });
+  );
 
   // Ensure step duration is recorded even if no complete event fired
   if (!stepDurationsMs.agent) {
@@ -343,29 +319,43 @@ export async function executeAgentTurnPath(params: AgentTurnParams) {
 
   let assistantText = result.response ?? "";
 
+  // Record scene if the coordinator produced one
+  const rawScene = result.recordedScene;
+
+  // Snapshot workspace file tree into the scene if Daytona is active
+  if (rawScene && daytonaEnv?.nativeFs) {
+    try {
+      const sessionDir = daytonaEnv.sessionDir ?? `/home/user/projects/${sessionId}`;
+      const fileList = await daytonaEnv.nativeFs.listFiles(sessionDir);
+      const files: Record<string, any> = {};
+      for (const file of (fileList ?? [])) {
+        files[file.path ?? file.name] = {
+          path: file.path ?? file.name,
+          size: file.size ?? 0,
+          isDir: file.isDir ?? false,
+          modifiedAt: file.modTime ?? new Date().toISOString(),
+        };
+      }
+      rawScene.workspace = {
+        files,
+        entryPoint: "index.html",
+        dependencies: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+    } catch {
+      // Best-effort workspace snapshot
+    }
+  }
+
+  const recordedScene = rawScene ? recordSceneVersion(sessionId, rawScene) : null;
+
   // If a scene was recorded, always present a clean scene description.
-  // The LLM may return raw tool_call XML/JSON which is not user-friendly.
   if (recordedScene?.currentScene?.code) {
     const sceneDesc = recordedScene.currentScene.explanation ?? recordedScene.currentScene.sceneId ?? "scene";
     assistantText = `${sceneDesc}\n\nPreview is available in the workspace.`;
   } else if (!assistantText || assistantText === "No response generated.") {
-    const failedTools = (result.toolResults ?? []).filter((t: any) => !t.success);
-    if (failedTools.length > 0) {
-      const failures = failedTools
-        .map((t: any) => {
-          const toolName = String(t.callId ?? "")
-            .replace(/^functions\./, "")
-            .replace(/:\d+$/, "");
-          return `- **${toolName || "tool"}**: ${t.output}`;
-        })
-        .join("\n");
-      assistantText = [
-        `I attempted to run ${result.toolCalls?.length ?? 0} tool call(s) but ${failedTools.length} failed:\n`,
-        failures,
-        "",
-        "This may indicate a sandbox configuration or permissions issue.",
-      ].join("\n");
-    } else if (result.error) {
+    if (result.error) {
       assistantText = `Agent encountered an error: ${result.error}`;
     } else {
       assistantText = "No response generated.";
@@ -444,8 +434,8 @@ export async function executeAgentTurnPath(params: AgentTurnParams) {
       sessionId,
       mode: forcedMode === "modify" ? "modify" : "agent",
       messageCount: listSessionMessages(sessionId).length,
-      toolCalls: result.toolCalls.length,
-      toolResults: result.toolResults.length,
+      toolCalls: result.steps?.length ?? 0,
+      toolResults: 0,
       agentSuccess: result.success,
       agentError: result.error ?? null,
       durationMs: stepDurationsMs.agent
@@ -466,8 +456,8 @@ export async function executeAgentTurnPath(params: AgentTurnParams) {
     error: result.success ? null : { message: result.error },
     message: result.success ? null : (result.error ?? "Agent turn failed"),
     agentMeta: {
-      toolCalls: result.toolCalls.length,
-      toolResults: result.toolResults.length
+      toolCalls: result.steps?.length ?? 0,
+      toolResults: 0
     }
   });
 
@@ -512,8 +502,8 @@ export async function executeAgentTurnPath(params: AgentTurnParams) {
     sceneState: recordedScene ?? sessionState,
     messages: listSessionMessages(sessionId),
     result: {
-      toolCalls: result.toolCalls,
-      toolResults: result.toolResults,
+      toolCalls: result.steps?.length ?? 0,
+      toolResults: 0,
       agentSuccess: result.success,
       agentError: result.error ?? null,
       sceneId: turnResult.sceneId,

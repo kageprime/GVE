@@ -259,7 +259,8 @@ export async function executeSkillRuntime({ skillId, code, timeoutMs, maxFrames,
     dedicatedKey = acquireResult.dedicatedKey;
 
     // ── 2. Prepare ──
-    const { executionCode, buildArtifacts } = await prepareSandbox(sandboxEnv, code, tools, skillId);
+    const effectiveTools = tools.length > 0 ? tools : (skill?.dependencies ?? []);
+    const { executionCode, buildArtifacts } = await prepareSandbox(sandboxEnv, code, effectiveTools, skillId);
 
     // ── 3. Budget check before dispatch ──
     const executionBudgetMs = remainingBudgetMs(turnDeadlineAtMs);

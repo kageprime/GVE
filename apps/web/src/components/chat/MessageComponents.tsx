@@ -2,10 +2,12 @@ import { useMemo, useState, useRef, useEffect, memo } from "react";
 import { motion } from "framer-motion";
 import { AlertTriangle } from "lucide-react";
 import MarkdownRenderer from "./MarkdownRenderer";
-import { AgentActionStream } from "./AgentActionStream";
+import { AgentActionStream, PHASE_CONFIG, derivePhase, type AgentPhase } from "./AgentActionStream";
+import { AgentDeckInline } from "./AgentDeckInline";
 import { SourceResultsList, type SourceResult } from "./meta/SourceResultsList";
 import { InlineScenePreview } from "./InlineScenePreview";
 import { InlineMediaPreview } from "./InlineMediaPreview";
+import { ParticleSpirit } from "./ParticleSpirit";
 import { useChatStore } from "../../stores";
 import type { MediaLifecycleStage, AgentFileEntry, AgentToolLogEntry } from "../../stores/chat/types";
 
@@ -57,6 +59,7 @@ export interface ThoughtItem {
   step: string;
   timestamp: number;
   meta?: string[];
+  toolName?: string | null;
 }
 
 interface AIMessageProps {
@@ -262,48 +265,56 @@ function StreamingCursor() {
   );
 }
 
-/* ── Compact thought pill for non-latest messages ── */
+/* ── Compact phase pill for non-latest messages ── */
 
-function CompactThoughtPill({ thoughts, thinkingDuration }: { thoughts: ThoughtItem[]; thinkingDuration?: number }) {
-  const [expanded, setExpanded] = useState(false);
+function CompactThoughtPill({ thoughts, thinkingDuration, onExpand }: { thoughts: ThoughtItem[]; thinkingDuration?: number; onExpand?: () => void }) {
   if (thoughts.length === 0) return null;
 
-  const labels = thoughts
-    .map((t) => {
-      const fromMeta = t.meta?.find((m) => m.startsWith("stepLabel:"));
-      return fromMeta ? fromMeta.substring("stepLabel:".length) : t.step.replace(/_/g, " ");
-    })
-    .filter(Boolean);
+  // Group thoughts into phases
+  const phases = new Map<AgentPhase, { count: number; status: "completed" | "running" | "failed" }>();
+  for (const t of thoughts) {
+    const phase = derivePhase(t.step, t.toolName ?? null);
+    if (!phases.has(phase)) {
+      phases.set(phase, { count: 0, status: "completed" });
+    }
+    const p = phases.get(phase)!;
+    p.count += 1;
+    const statusMeta = t.meta?.find((m) => m.startsWith("status:"));
+    if (statusMeta) {
+      const s = statusMeta.substring("status:".length);
+      if (s === "streaming" || s === "running" || s === "pending") p.status = "running";
+      else if (s === "failed" && p.status !== "running") p.status = "failed";
+    }
+  }
 
-  const uniqueLabels = Array.from(new Set(labels));
-  const preview = uniqueLabels.slice(0, 3).join(" · ");
-  const moreCount = uniqueLabels.length - 3;
+  const sortedPhases = Array.from(phases.entries()).sort((a, b) => {
+    return PHASE_CONFIG[a[0]].order - PHASE_CONFIG[b[0]].order;
+  });
 
   return (
-    <div className="mb-2">
-      {!expanded ? (
-        <button
-          type="button"
-          onClick={() => setExpanded(true)}
-          className="inline-flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.03] px-3 py-1.5 text-[11px] text-white/50 transition hover:bg-white/[0.06] hover:text-white/70"
-        >
-          <span className="inline-flex h-1.5 w-1.5 rounded-full bg-white/30" />
-          <span className="font-medium text-white/60">{thoughts.length} action{thoughts.length !== 1 ? "s" : ""}</span>
-          {preview && <span className="text-white/40">· {preview}{moreCount > 0 ? ` · +${moreCount}` : ""}</span>}
-        </button>
-      ) : (
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setExpanded(false)}
-            className="mb-1 inline-flex items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.03] px-2.5 py-1 text-[10px] text-white/40 transition hover:bg-white/[0.06] hover:text-white/60"
-          >
-            <span>Hide actions</span>
-          </button>
-          <AgentActionStream thoughts={thoughts} thinkingDuration={thinkingDuration} />
-        </div>
-      )}
-    </div>
+    <button
+      type="button"
+      onClick={onExpand}
+      className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.03] px-3 py-1.5 text-[11px] text-white/50 transition hover:bg-white/[0.06] hover:text-white/70"
+    >
+      <span className="inline-flex h-1.5 w-1.5 rounded-full bg-white/30" />
+      <span className="font-medium text-white/60">{thoughts.length} action{thoughts.length !== 1 ? "s" : ""}</span>
+      <span className="mx-1 h-3 w-px bg-white/10" />
+      <span className="flex items-center gap-1">
+        {sortedPhases.map(([phase, data]) => {
+          const config = PHASE_CONFIG[phase];
+          const Icon = config.icon;
+          return (
+            <span key={phase} className="flex items-center gap-0.5" title={`${config.label}: ${data.count} action${data.count !== 1 ? "s" : ""}`}>
+              <Icon className="h-2.5 w-2.5" style={{ color: config.color, opacity: 0.6 }} />
+              {data.count > 1 && (
+                <span className="text-[9px] text-white/20">{data.count}</span>
+              )}
+            </span>
+          );
+        })}
+      </span>
+    </button>
   );
 }
 
@@ -340,24 +351,26 @@ const MetaAIMessageInner = memo(function MetaAIMessageInner({
   isLatest = false,
 }: AIMessageProps) {
   const sourceResults = useMemo(() => extractSourceResults(content, meta), [content, meta]);
+  const [manuallyExpanded, setManuallyExpanded] = useState(false);
 
   // Grace period: keep thinking UI visible briefly after completion
   const graceActive = useGracePeriod(isThinking, 400);
   const showThinkingUI = isThinking || graceActive;
+  const showExpanded = isLatest || manuallyExpanded;
 
   return (
     <div className="mb-4 flex min-w-0 gap-3 animate-message-enter">
       <div className="min-w-0 flex-1">
-        {thoughts.length > 0 && (isLatest || showThinkingUI ? (
+        {thoughts.length > 0 && (showExpanded ? (
           <motion.div
             initial={false}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3 }}
           >
-            <AgentActionStream thoughts={thoughts} isThinking={showThinkingUI} thinkingDuration={thinkingDuration} />
+            <AgentDeckInline thoughts={thoughts} isRunning={showThinkingUI} />
           </motion.div>
         ) : (
-          <CompactThoughtPill thoughts={thoughts} thinkingDuration={thinkingDuration} />
+          <CompactThoughtPill thoughts={thoughts} thinkingDuration={thinkingDuration} onExpand={() => setManuallyExpanded(true)} />
         ))}
 
         {errorCode && !showThinkingUI && (
@@ -369,7 +382,12 @@ const MetaAIMessageInner = memo(function MetaAIMessageInner({
           </div>
         )}
 
-
+        {/* Idle animation during the dead zone before first thought arrives */}
+        {showThinkingUI && !content && thoughts.length === 0 && (
+          <div className="my-2">
+            <ParticleSpirit />
+          </div>
+        )}
 
         <div className={`markdown-message ${showThinkingUI ? "text-white/50" : "text-white/90"}`}>
           {content ? (

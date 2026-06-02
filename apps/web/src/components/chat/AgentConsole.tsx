@@ -29,6 +29,7 @@ import type { MediaLifecycleStage } from "../../stores/chat/types";
 import type { ThoughtItem } from "./MessageComponents";
 import { useConsoleState, type ConsoleTab } from "./useConsoleState";
 import { buildAgentActions, CATEGORY_CONFIG, type AgentActionItem, StatusIcon } from "./AgentActionStream";
+import { SearchResultCard } from "./tool-results";
 
 /* ── Helpers ─────────────────────────────────────────── */
 
@@ -476,8 +477,13 @@ function CodeWindow({ code }: { code?: string | null }) {
   );
 }
 
-function BrowserWindow({ urls }: { urls: string[] }) {
-  if (urls.length === 0) {
+function BrowserWindow({ toolLog, urls }: { toolLog: import("../../stores/chat/types").AgentToolLogEntry[]; urls: string[] }) {
+  // Extract all search results from tool log
+  const searchEntries = toolLog.filter(
+    (entry) => entry.rawResult?.type === "search"
+  );
+
+  if (searchEntries.length === 0 && urls.length === 0) {
     return (
       <div className="flex h-32 items-center justify-center text-[11px] text-white/20 font-mono">
         No search results to display.
@@ -486,29 +492,47 @@ function BrowserWindow({ urls }: { urls: string[] }) {
   }
 
   return (
-    <div className="flex flex-col gap-1.5 p-2">
-      {urls.map((url, idx) => {
-        let hostname = url;
-        try {
-          hostname = new URL(url).hostname.replace(/^www\./, "");
-        } catch { /* keep raw */ }
-        return (
-          <a
-            key={idx}
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 rounded-md border border-white/[0.04] bg-white/[0.02] px-2.5 py-2 text-[11px] transition-colors hover:bg-white/[0.04] hover:border-[#fbbf24]/20 group"
-          >
-            <Globe className="h-3 w-3 shrink-0 text-[#fbbf24]/50 group-hover:text-[#fbbf24]/70" />
-            <div className="flex min-w-0 flex-1 flex-col">
-              <span className="truncate font-mono text-[#79c0ff]/80">{hostname}</span>
-              <span className="truncate text-[10px] text-white/20">{url}</span>
-            </div>
-            <ExternalLink className="h-3 w-3 shrink-0 text-white/15 group-hover:text-white/30" />
-          </a>
-        );
-      })}
+    <div className="flex flex-col gap-4 p-3 max-h-[500px] overflow-y-auto scrollbar">
+      {/* Rich search results from tool log */}
+      {searchEntries.map((entry, idx) => (
+        <div key={idx} className="flex flex-col gap-1">
+          <div className="flex items-center gap-1.5 mb-1">
+            <Search className="h-3 w-3 text-amber-400/40" />
+            <span className="text-[10px] text-white/30 font-mono">
+              {entry.tool} · {(entry.durationMs / 1000).toFixed(1)}s
+            </span>
+          </div>
+          {entry.rawResult && <SearchResultCard data={entry.rawResult as any} compact={false} />}
+        </div>
+      ))}
+
+      {/* Legacy URL list fallback */}
+      {urls.length > 0 && searchEntries.length === 0 && (
+        <div className="flex flex-col gap-1.5">
+          {urls.map((url, idx) => {
+            let hostname = url;
+            try {
+              hostname = new URL(url).hostname.replace(/^www\./, "");
+            } catch { /* keep raw */ }
+            return (
+              <a
+                key={idx}
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 rounded-md border border-white/[0.04] bg-white/[0.02] px-2.5 py-2 text-[11px] transition-colors hover:bg-white/[0.04] hover:border-[#fbbf24]/20 group"
+              >
+                <Globe className="h-3 w-3 shrink-0 text-[#fbbf24]/50 group-hover:text-[#fbbf24]/70" />
+                <div className="flex min-w-0 flex-1 flex-col">
+                  <span className="truncate font-mono text-[#79c0ff]/80">{hostname}</span>
+                  <span className="truncate text-[10px] text-white/20">{url}</span>
+                </div>
+                <ExternalLink className="h-3 w-3 shrink-0 text-white/15 group-hover:text-white/30" />
+              </a>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -551,7 +575,7 @@ const AgentConsoleInner = memo(function AgentConsoleInner({
   const hasFiles = files.length > 0;
   const hasTools = toolLog.length > 0;
   const hasCode = Boolean(code);
-  const hasBrowser = searchUrls.length > 0;
+  const hasBrowser = searchUrls.length > 0 || toolLog.some((t) => t.rawResult?.type === "search");
   const hasActions = thoughts.length > 0;
 
   const defaultTab: ConsoleTab = hasActions || hasTools ? "terminal"
@@ -702,7 +726,7 @@ const AgentConsoleInner = memo(function AgentConsoleInner({
             />
           )}
           {activeTab === "code" && <CodeWindow code={code} />}
-          {activeTab === "browser" && <BrowserWindow urls={searchUrls} />}
+          {activeTab === "browser" && <BrowserWindow urls={searchUrls} toolLog={toolLog} />}
         </div>
 
         {/* Footer status line */}

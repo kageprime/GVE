@@ -48,9 +48,41 @@ export class DedicatedSandboxManager {
     this.idleHibernateMs = parsePositiveIntEnv(process.env.DEDICATED_SANDBOX_IDLE_HIBERNATE_SECONDS, 900, 30) * 1000;
     this.hibernatedTtlMs = parsePositiveIntEnv(process.env.DEDICATED_SANDBOX_HIBERNATED_TTL_SECONDS, 86_400, 300) * 1000;
 
+    this.loadRecords();
+
     const reaperIntervalMs = parsePositiveIntEnv(process.env.DEDICATED_SANDBOX_REAPER_INTERVAL_SECONDS, 30, 10) * 1000;
     this.reaper = setInterval(() => void this._reap(), reaperIntervalMs);
     this.reaper.unref?.();
+  }
+
+  loadRecords(): void {
+    if (!this.enabled) return;
+    try {
+      const filePath = join(DSM_DATA_DIR, "records.json");
+      if (!existsSync(filePath)) return;
+      const raw = readFileSync(filePath, "utf-8");
+      const parsed = JSON.parse(raw);
+      const records = Array.isArray(parsed?.records) ? parsed.records : [];
+      let loaded = 0;
+      for (const r of records) {
+        if (!r?.key || !r?.workspaceId) continue;
+        // Reconstruct a minimal record — the full sandboxEnv will be
+        // rehydrated by acquireForKey on next use (it calls pool.resume)
+        this.records.set(r.key, {
+          key: r.key,
+          sandboxEnv: { workspaceId: r.workspaceId, _workspace: null },
+          createdAtMs: r.createdAtMs ?? Date.now(),
+          lastUsedAtMs: r.lastUsedAtMs ?? Date.now(),
+          hibernatedAtMs: r.hibernatedAtMs ?? null,
+        });
+        loaded++;
+      }
+      if (loaded > 0) {
+        console.log(`[DedicatedSandbox] Loaded ${loaded} persisted workspace record(s)`);
+      }
+    } catch (err) {
+      console.error("[DedicatedSandbox] Failed to load records:", (err as Error).message);
+    }
   }
 
   isEnabled(): boolean {

@@ -678,7 +678,7 @@ export class SandboxPoolManager {
     const hostname = this._daytonaHostname ?? "app.daytona.io";
     try {
       await Promise.race([
-        dns.resolve4(hostname),
+        dns.lookup(hostname),
         new Promise((_, reject) =>
           setTimeout(() => reject(new Error(`DNS pre-flight timed out after ${timeoutMs}ms for ${hostname}`)), timeoutMs)
         )

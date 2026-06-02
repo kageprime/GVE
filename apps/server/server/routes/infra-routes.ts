@@ -31,7 +31,7 @@ infraRouter.get("/healthz", (_req: any, res: any) => {
   res.json({
     status: "ok",
     backend: "js",
-    orchestration: "langgraph",
+    orchestration: "multi-agent",
     llm: {
       pool: {
         enabledProviders: poolStatus.providers.filter((p: any) => p.state !== "disabled").length,
@@ -181,6 +181,110 @@ infraRouter.delete("/api/v1/auth/api-keys/:id", requireAuthOrApiKey, async (req:
       return;
     }
     res.json({ data: { deleted: true }, error: null });
+  } catch (error) {
+    handleError(error, res);
+  }
+});
+
+/* ─── Workspace File API ─── */
+
+infraRouter.get("/api/v1/workspace/tree", requireAuthOrApiKey, async (req: any, res: any) => {
+  try {
+    const sessionId = String(req.query.sessionId ?? "").trim();
+    if (!sessionId) {
+      res.status(400).json({ error: "BAD_REQUEST", message: "sessionId required" });
+      return;
+    }
+
+    const { getWorkspace } = await import("../sandbox/daytona-workspace-store.js");
+    const ws = getWorkspace(sessionId);
+    if (!ws?.nativeFs) {
+      res.status(404).json({ error: "NOT_FOUND", message: "No active workspace for session" });
+      return;
+    }
+
+    const sessionDir = ws.sessionDir ?? `/home/user/projects/${sessionId}`;
+    const files = await ws.nativeFs.listFiles(sessionDir);
+    res.json({
+      success: true,
+      path: sessionDir,
+      files: (files ?? []).map((f: any) => ({
+        name: f.name ?? f.path?.split("/").pop(),
+        path: f.path ?? f.name,
+        size: f.size ?? 0,
+        isDir: f.isDir ?? false,
+        modifiedAt: f.modTime ?? new Date().toISOString(),
+      })),
+    });
+  } catch (error) {
+    handleError(error, res);
+  }
+});
+
+infraRouter.get("/api/v1/workspace/file", requireAuthOrApiKey, async (req: any, res: any) => {
+  try {
+    const filePath = String(req.query.path ?? "").trim();
+    const sessionId = String(req.query.sessionId ?? "").trim();
+    if (!filePath || !sessionId) {
+      res.status(400).json({ error: "BAD_REQUEST", message: "path and sessionId required" });
+      return;
+    }
+
+    const { getWorkspace } = await import("../sandbox/daytona-workspace-store.js");
+    const ws = getWorkspace(sessionId);
+    if (!ws?.nativeFs) {
+      res.status(404).json({ error: "NOT_FOUND", message: "No active workspace for session" });
+      return;
+    }
+
+    const content = await ws.nativeFs.downloadFile(filePath);
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.send(content.toString("utf-8"));
+  } catch (error) {
+    handleError(error, res);
+  }
+});
+
+infraRouter.post("/api/v1/workspace/file", requireAuthOrApiKey, async (req: any, res: any) => {
+  try {
+    const { path: filePath, content, sessionId } = req.body ?? {};
+    if (!filePath || !content || !sessionId) {
+      res.status(400).json({ error: "BAD_REQUEST", message: "path, content, and sessionId required" });
+      return;
+    }
+
+    const { getWorkspace } = await import("../sandbox/daytona-workspace-store.js");
+    const ws = getWorkspace(sessionId);
+    if (!ws?.nativeFs) {
+      res.status(404).json({ error: "NOT_FOUND", message: "No active workspace for session" });
+      return;
+    }
+
+    await ws.nativeFs.uploadFile(Buffer.from(content, "utf-8"), filePath);
+    res.json({ success: true, path: filePath });
+  } catch (error) {
+    handleError(error, res);
+  }
+});
+
+infraRouter.delete("/api/v1/workspace/file", requireAuthOrApiKey, async (req: any, res: any) => {
+  try {
+    const filePath = String(req.query.path ?? "").trim();
+    const sessionId = String(req.query.sessionId ?? "").trim();
+    if (!filePath || !sessionId) {
+      res.status(400).json({ error: "BAD_REQUEST", message: "path and sessionId required" });
+      return;
+    }
+
+    const { getWorkspace } = await import("../sandbox/daytona-workspace-store.js");
+    const ws = getWorkspace(sessionId);
+    if (!ws?.nativeFs) {
+      res.status(404).json({ error: "NOT_FOUND", message: "No active workspace for session" });
+      return;
+    }
+
+    await ws.nativeFs.deleteFile(filePath, true);
+    res.json({ success: true, deleted: true, path: filePath });
   } catch (error) {
     handleError(error, res);
   }

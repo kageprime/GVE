@@ -1,0 +1,428 @@
+{
+  "sessionId": "draft-b263770c-3ea2-4e1a-969b-331106f50954",
+  "status": "idle",
+  "artifacts": [],
+  "artifactPointer": -1,
+  "currentScene": null,
+  "workspace": null,
+  "messages": [
+    {
+      "messageId": "thought-turn_started-1779330101503",
+      "role": "thought",
+      "content": "Interesting — let me process what you're looking for here.",
+      "kind": "thought",
+      "error": null,
+      "meta": [
+        "turn_started",
+        "requestId:req-ws-1779330098988-cd340f",
+        "messageId:message-5"
+      ],
+      "metadata": [
+        "turn_started",
+        "requestId:req-ws-1779330098988-cd340f",
+        "messageId:message-5"
+      ],
+      "createdAt": "2026-05-21T02:21:41.503+00:00",
+      "updatedAt": "2026-05-21T02:21:41.503+00:00"
+    },
+    {
+      "messageId": "message-5",
+      "role": "assistant",
+      "content": "",
+      "kind": "streaming",
+      "error": null,
+      "meta": [
+        "requestId:req-ws-1779330098988-cd340f"
+      ],
+      "metadata": [],
+      "createdAt": "2026-05-21T02:21:40.686+00:00",
+      "updatedAt": "2026-05-21T02:21:41.092+00:00"
+    },
+    {
+      "messageId": "user-bca03eec-086b-4b2d-9d4a-a369f169bbbb",
+      "role": "user",
+      "content": "continue",
+      "kind": "input",
+      "error": null,
+      "meta": [],
+      "metadata": {},
+      "createdAt": "2026-05-21T02:21:39.339+00:00",
+      "updatedAt": "2026-05-21T02:21:39.339+00:00"
+    },
+    {
+      "messageId": "thought-turn_started-1779330014038",
+      "role": "thought",
+      "content": "Alright, I'm reading through your request now. Let me break this down.",
+      "kind": "thought",
+      "error": null,
+      "meta": [
+        "turn_started",
+        "requestId:req-ws-1779330012597-f5c567",
+        "messageId:message-2"
+      ],
+      "metadata": [
+        "turn_started",
+        "requestId:req-ws-1779330012597-f5c567",
+        "messageId:message-2"
+      ],
+      "createdAt": "2026-05-21T02:20:14.038+00:00",
+      "updatedAt": "2026-05-21T02:20:14.038+00:00"
+    },
+    {
+      "messageId": "message-2",
+      "role": "assistant",
+      "content": "",
+      "kind": "streaming",
+      "error": null,
+      "meta": [
+        "requestId:req-ws-1779330012597-f5c567"
+      ],
+      "metadata": [],
+      "createdAt": "2026-05-21T02:20:13.16+00:00",
+      "updatedAt": "2026-05-21T02:20:13.559+00:00"
+    },
+    {
+      "messageId": "user-21c6efea-106e-4eee-80d4-ac48e59014cd",
+      "role": "user",
+      "content": "Design a particle system",
+      "kind": "input",
+      "error": null,
+      "meta": [],
+      "metadata": {},
+      "createdAt": "2026-05-21T02:20:12.668+00:00",
+      "updatedAt": "2026-05-21T02:20:12.668+00:00"
+    },
+    {
+      "messageId": "user-eaed7db7-2b46-4234-a6be-e2f638445069",
+      "role": "user",
+      "content": "hi",
+      "kind": "input",
+      "metadata": {},
+      "createdAt": "2026-05-21T02:22:43.309Z",
+      "updatedAt": "2026-05-21T02:22:43.309Z"
+    },
+    {
+      "messageId": "message-8",
+      "role": "assistant",
+      "content": "Agent encountered an error: Coder failed: Coder failed: fireworks-kimi stream failed (404): {\"error\":{\"message\":\"Model not found, inaccessible, and/or not deployed\",\"param\":\"model\",\"code\":\"NOT_FOUND\",\"type\":\"error\"},\"request_id\":\"chatcmpl-f788a4ed35ca4e53a7fa5bcf6f1f676d\"}",
+      "kind": "agent",
+      "error": {
+        "message": "Coder failed: Coder failed: fireworks-kimi stream failed (404): {\"error\":{\"message\":\"Model not found, inaccessible, and/or not deployed\",\"param\":\"model\",\"code\":\"NOT_FOUND\",\"type\":\"error\"},\"request_id\":\"chatcmpl-f788a4ed35ca4e53a7fa5bcf6f1f676d\"}"
+      },
+      "meta": [
+        "assistantSource:agent-coordinator"
+      ],
+      "metadata": [],
+      "createdAt": "2026-05-21T02:22:44.862Z",
+      "updatedAt": "2026-05-21T02:22:50.307Z"
+    },
+    {
+      "messageId": "thought-turn_started-1779330165789",
+      "role": "thought",
+      "content": "Let me think about this... I need to understand what you're asking for.",
+      "kind": "thought",
+      "meta": [
+        "turn_started",
+        "requestId:req-ws-1779330162888-3a5588",
+        "messageId:message-8"
+      ],
+      "metadata": [
+        "turn_started",
+        "requestId:req-ws-1779330162888-3a5588",
+        "messageId:message-8"
+      ],
+      "createdAt": "2026-05-21T02:22:45.789Z",
+      "updatedAt": "2026-05-21T02:22:45.789Z"
+    },
+    {
+      "messageId": "thought-agent_thinking-1779330167396",
+      "role": "thought",
+      "content": "Checking what tools would help me answer this best.",
+      "kind": "thought",
+      "meta": [
+        "agent_thinking",
+        "requestId:req-ws-1779330162888-3a5588",
+        "messageId:message-8"
+      ],
+      "metadata": [
+        "agent_thinking",
+        "requestId:req-ws-1779330162888-3a5588",
+        "messageId:message-8"
+      ],
+      "createdAt": "2026-05-21T02:22:47.396Z",
+      "updatedAt": "2026-05-21T02:22:47.396Z"
+    },
+    {
+      "messageId": "thought-agent_tool_called-1779330167418",
+      "role": "thought",
+      "content": "Calling planner — let me see if the fix works...",
+      "kind": "thought",
+      "meta": [
+        "agent_tool_called",
+        "requestId:req-ws-1779330162888-3a5588",
+        "messageId:message-8"
+      ],
+      "metadata": [
+        "agent_tool_called",
+        "requestId:req-ws-1779330162888-3a5588",
+        "messageId:message-8"
+      ],
+      "createdAt": "2026-05-21T02:22:47.418Z",
+      "updatedAt": "2026-05-21T02:22:47.418Z"
+    },
+    {
+      "messageId": "thought-agent_tool_result-1779330167421",
+      "role": "thought",
+      "content": "planner finished — processing the result...",
+      "kind": "thought",
+      "meta": [
+        "agent_tool_result",
+        "requestId:req-ws-1779330162888-3a5588",
+        "messageId:message-8"
+      ],
+      "metadata": [
+        "agent_tool_result",
+        "requestId:req-ws-1779330162888-3a5588",
+        "messageId:message-8"
+      ],
+      "createdAt": "2026-05-21T02:22:47.421Z",
+      "updatedAt": "2026-05-21T02:22:47.421Z"
+    },
+    {
+      "messageId": "thought-agent_tool_called-1779330167425",
+      "role": "thought",
+      "content": "Running coder to check the code...",
+      "kind": "thought",
+      "meta": [
+        "agent_tool_called",
+        "requestId:req-ws-1779330162888-3a5588",
+        "messageId:message-8"
+      ],
+      "metadata": [
+        "agent_tool_called",
+        "requestId:req-ws-1779330162888-3a5588",
+        "messageId:message-8"
+      ],
+      "createdAt": "2026-05-21T02:22:47.426Z",
+      "updatedAt": "2026-05-21T02:22:47.426Z"
+    },
+    {
+      "messageId": "thought-turn_error-1779330170298",
+      "role": "thought",
+      "content": "I hit an error in the pipeline. Here are the details...",
+      "kind": "thought",
+      "meta": [
+        "turn_error",
+        "requestId:req-ws-1779330162888-3a5588",
+        "messageId:message-8"
+      ],
+      "metadata": [
+        "turn_error",
+        "requestId:req-ws-1779330162888-3a5588",
+        "messageId:message-8"
+      ],
+      "createdAt": "2026-05-21T02:22:50.298Z",
+      "updatedAt": "2026-05-21T02:22:50.298Z"
+    },
+    {
+      "messageId": "thought-turn_complete-1779330170840",
+      "role": "thought",
+      "content": "Complete. The scene has been generated and synced.",
+      "kind": "thought",
+      "meta": [
+        "turn_complete",
+        "requestId:req-ws-1779330162888-3a5588",
+        "messageId:message-8"
+      ],
+      "metadata": [
+        "turn_complete",
+        "requestId:req-ws-1779330162888-3a5588",
+        "messageId:message-8"
+      ],
+      "createdAt": "2026-05-21T02:22:50.840Z",
+      "updatedAt": "2026-05-21T02:22:50.840Z"
+    },
+    {
+      "messageId": "user-ee712815-5717-408e-9fd8-504f4846c1eb",
+      "role": "user",
+      "content": "hi",
+      "kind": "input",
+      "metadata": {},
+      "createdAt": "2026-05-21T02:23:05.055Z",
+      "updatedAt": "2026-05-21T02:23:05.055Z"
+    },
+    {
+      "messageId": "message-17",
+      "role": "assistant",
+      "content": "Agent encountered an error: Coder failed: Coder failed: fireworks-kimi stream failed (404): {\"error\":{\"message\":\"Model not found, inaccessible, and/or not deployed\",\"param\":\"model\",\"code\":\"NOT_FOUND\",\"type\":\"error\"},\"request_id\":\"chatcmpl-0c881fde2835458597375d7bc07e1329\"}",
+      "kind": "agent",
+      "error": {
+        "message": "Coder failed: Coder failed: fireworks-kimi stream failed (404): {\"error\":{\"message\":\"Model not found, inaccessible, and/or not deployed\",\"param\":\"model\",\"code\":\"NOT_FOUND\",\"type\":\"error\"},\"request_id\":\"chatcmpl-0c881fde2835458597375d7bc07e1329\"}"
+      },
+      "meta": [
+        "assistantSource:agent-coordinator"
+      ],
+      "metadata": [],
+      "createdAt": "2026-05-21T02:23:06.705Z",
+      "updatedAt": "2026-05-21T02:23:14.504Z"
+    },
+    {
+      "messageId": "thought-turn_started-1779330187827",
+      "role": "thought",
+      "content": "Okay, let me dive into this. I'll start by understanding what kind of visual you want.",
+      "kind": "thought",
+      "meta": [
+        "turn_started",
+        "requestId:req-ws-1779330184902-52caa8",
+        "messageId:message-17"
+      ],
+      "metadata": [
+        "turn_started",
+        "requestId:req-ws-1779330184902-52caa8",
+        "messageId:message-17"
+      ],
+      "createdAt": "2026-05-21T02:23:07.827Z",
+      "updatedAt": "2026-05-21T02:23:07.827Z"
+    },
+    {
+      "messageId": "thought-agent_thinking-1779330188785",
+      "role": "thought",
+      "content": "Checking what tools would help me answer this best.",
+      "kind": "thought",
+      "meta": [
+        "agent_thinking",
+        "requestId:req-ws-1779330184902-52caa8",
+        "messageId:message-17"
+      ],
+      "metadata": [
+        "agent_thinking",
+        "requestId:req-ws-1779330184902-52caa8",
+        "messageId:message-17"
+      ],
+      "createdAt": "2026-05-21T02:23:08.785Z",
+      "updatedAt": "2026-05-21T02:23:08.785Z"
+    },
+    {
+      "messageId": "thought-agent_tool_called-1779330188792",
+      "role": "thought",
+      "content": "Calling planner — let me see if the fix works...",
+      "kind": "thought",
+      "meta": [
+        "agent_tool_called",
+        "requestId:req-ws-1779330184902-52caa8",
+        "messageId:message-17"
+      ],
+      "metadata": [
+        "agent_tool_called",
+        "requestId:req-ws-1779330184902-52caa8",
+        "messageId:message-17"
+      ],
+      "createdAt": "2026-05-21T02:23:08.792Z",
+      "updatedAt": "2026-05-21T02:23:08.792Z"
+    },
+    {
+      "messageId": "thought-agent_tool_result-1779330188795",
+      "role": "thought",
+      "content": "planner finished — processing the result...",
+      "kind": "thought",
+      "meta": [
+        "agent_tool_result",
+        "requestId:req-ws-1779330184902-52caa8",
+        "messageId:message-17"
+      ],
+      "metadata": [
+        "agent_tool_result",
+        "requestId:req-ws-1779330184902-52caa8",
+        "messageId:message-17"
+      ],
+      "createdAt": "2026-05-21T02:23:08.795Z",
+      "updatedAt": "2026-05-21T02:23:08.795Z"
+    },
+    {
+      "messageId": "thought-agent_tool_called-1779330188798",
+      "role": "thought",
+      "content": "Using coder to verify my changes...",
+      "kind": "thought",
+      "meta": [
+        "agent_tool_called",
+        "requestId:req-ws-1779330184902-52caa8",
+        "messageId:message-17"
+      ],
+      "metadata": [
+        "agent_tool_called",
+        "requestId:req-ws-1779330184902-52caa8",
+        "messageId:message-17"
+      ],
+      "createdAt": "2026-05-21T02:23:08.798Z",
+      "updatedAt": "2026-05-21T02:23:08.798Z"
+    },
+    {
+      "messageId": "thought-turn_error-1779330194502",
+      "role": "thought",
+      "content": "I hit an error in the pipeline. Here are the details...",
+      "kind": "thought",
+      "meta": [
+        "turn_error",
+        "requestId:req-ws-1779330184902-52caa8",
+        "messageId:message-17"
+      ],
+      "metadata": [
+        "turn_error",
+        "requestId:req-ws-1779330184902-52caa8",
+        "messageId:message-17"
+      ],
+      "createdAt": "2026-05-21T02:23:14.502Z",
+      "updatedAt": "2026-05-21T02:23:14.502Z"
+    },
+    {
+      "messageId": "thought-turn_complete-1779330195894",
+      "role": "thought",
+      "content": "Complete. The scene has been generated and synced.",
+      "kind": "thought",
+      "meta": [
+        "turn_complete",
+        "requestId:req-ws-1779330184902-52caa8",
+        "messageId:message-17"
+      ],
+      "metadata": [
+        "turn_complete",
+        "requestId:req-ws-1779330184902-52caa8",
+        "messageId:message-17"
+      ],
+      "createdAt": "2026-05-21T02:23:15.894Z",
+      "updatedAt": "2026-05-21T02:23:15.894Z"
+    }
+  ],
+  "orchestrationTrace": [
+    {
+      "step": "turn_complete",
+      "payload": {
+        "sessionId": "draft-b263770c-3ea2-4e1a-969b-331106f50954",
+        "mode": "agent",
+        "messageCount": 15,
+        "toolCalls": 2,
+        "toolResults": 0,
+        "agentSuccess": false,
+        "agentError": "Coder failed: Coder failed: fireworks-kimi stream failed (404): {\"error\":{\"message\":\"Model not found, inaccessible, and/or not deployed\",\"param\":\"model\",\"code\":\"NOT_FOUND\",\"type\":\"error\"},\"request_id\":\"chatcmpl-f788a4ed35ca4e53a7fa5bcf6f1f676d\"}",
+        "durationMs": 4056
+      },
+      "timestamp": "2026-05-21T02:22:51.352Z"
+    },
+    {
+      "step": "turn_complete",
+      "payload": {
+        "sessionId": "draft-b263770c-3ea2-4e1a-969b-331106f50954",
+        "mode": "agent",
+        "messageCount": 24,
+        "toolCalls": 2,
+        "toolResults": 0,
+        "agentSuccess": false,
+        "agentError": "Coder failed: Coder failed: fireworks-kimi stream failed (404): {\"error\":{\"message\":\"Model not found, inaccessible, and/or not deployed\",\"param\":\"model\",\"code\":\"NOT_FOUND\",\"type\":\"error\"},\"request_id\":\"chatcmpl-0c881fde2835458597375d7bc07e1329\"}",
+        "durationMs": 6308
+      },
+      "timestamp": "2026-05-21T02:23:16.504Z"
+    }
+  ],
+  "createdAt": "2026-05-21T02:21:43.363+00:00",
+  "updatedAt": "2026-05-21T02:23:16.504Z"
+}

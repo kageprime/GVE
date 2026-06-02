@@ -5,7 +5,7 @@ export default defineConfig({
   server: {
     port: 5173,
     headers: {
-      "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: data: https://clerk.dosco.live; connect-src 'self' https: wss: ws:; img-src 'self' blob: data: https:; style-src 'self' 'unsafe-inline' https:; font-src 'self' https: data:; media-src 'self' blob: data: https:; frame-src 'self' blob: data:; worker-src 'self' blob:;",
+      "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: data: https://clerk.dosco.live; connect-src 'self' https: wss: ws: http://localhost:8000 http://127.0.0.1:8000; img-src 'self' blob: data: https:; style-src 'self' 'unsafe-inline' https:; font-src 'self' https: data:; media-src 'self' blob: data: https:; frame-src 'self' blob: data:; worker-src 'self' blob:;",
     },
     proxy: {
       "/api": {

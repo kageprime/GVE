@@ -31,10 +31,10 @@ describe("pipeline HTTP (plan + execute)", () => {
     expect(res.status).toBe(200);
     const body = (await res.json()) as { status?: string; orchestration?: string };
     expect(body.status).toBe("ok");
-    expect(body.orchestration).toBe("langgraph");
+    expect(body.orchestration).toBe("multi-agent");
   });
 
-  it("POST /api/v1/tasks/plan then /execute runs LangGraph stubs without LLM", async () => {
+  it("POST /api/v1/tasks/plan then /execute runs multi-agent stubs without LLM", async () => {
     const planRes = await fetch(`${baseUrl}/api/v1/tasks/plan`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

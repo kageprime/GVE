@@ -76,6 +76,50 @@ export interface AgentFileEntry {
   createdAt: string;
 }
 
+export interface SearchToolResult {
+  type: "search";
+  query: string;
+  answer?: string | null;
+  results?: Array<{ title: string; url: string; snippet: string; score?: number; image?: string | null }>;
+}
+
+export interface PlanToolResult {
+  type: "plan";
+  skill: string;
+  quality: string;
+  tasks?: Array<{ id: string; title: string; description: string; agent: string; status: string }>;
+  fallback?: { from: string; to: string; reason: string } | null;
+}
+
+export interface CodeToolResult {
+  type: "code";
+  language: string;
+  snippet: string;
+  lines: number;
+  isFix?: boolean;
+  fixReason?: string;
+}
+
+export interface ValidationToolResult {
+  type: "validation";
+  score: number;
+  errors: Array<{ code?: string; message: string; line?: number }>;
+  warnings: Array<{ code?: string; message: string; line?: number }>;
+  canRetry: boolean;
+}
+
+export interface ExecutionToolResult {
+  type: "execution";
+  success: boolean;
+  previewUrl?: string | null;
+  mediaUrl?: string | null;
+  durationMs?: number;
+  error?: string | null;
+  logs?: string[];
+}
+
+export type ToolRawResult = SearchToolResult | PlanToolResult | CodeToolResult | ValidationToolResult | ExecutionToolResult;
+
 export interface AgentToolLogEntry {
   id: string;
   tool: string;
@@ -83,6 +127,7 @@ export interface AgentToolLogEntry {
   output: string;
   durationMs: number;
   timestamp: string;
+  rawResult?: ToolRawResult | null;
 }
 
 export interface ComposerImageAttachment {
@@ -166,6 +211,7 @@ export interface ChatState {
   activeRequestId: string | null;
   thinkingText: string | null;
   thinkingStep: string;
+  thinkingToolName: string | null;
   showScrollToLatest: boolean;
   iterationState: UIIterationState | null;
   agentState: UIAgentState | null;

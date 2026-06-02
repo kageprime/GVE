@@ -1,0 +1,489 @@
+{
+  "sessionId": "183e21d3-03e2-4109-a2ae-0dad4b961004",
+  "status": "idle",
+  "artifacts": [
+    {
+      "artifactId": "artifact-1779544956367-06d419",
+      "title": "scene-1779544956366",
+      "createdAt": "2026-05-23T14:02:36.367Z",
+      "updatedAt": "2026-05-23T14:02:36.367Z",
+      "revisions": [
+        {
+          "sessionId": "183e21d3-03e2-4109-a2ae-0dad4b961004",
+          "sceneId": "scene-1779544956366",
+          "code": "renderer.shadowMap.enabled = true;\nrenderer.shadowMap.type = THREE.PCFSoftShadowMap;\nrenderer.toneMapping = THREE.ACESFilmicToneMapping;\nrenderer.toneMappingExposure = 1.0;\n\nscene.background = new THREE.Color(0x5c94fc);\nscene.fog = new THREE.Fog(0x5c94fc, 25, 70);\n\ncamera.position.set(7, 5, 10);\ncamera.lookAt(0, 2, 0);\n\nconst ambientLight = new THREE.AmbientLight(0xffffff, 0.35);\nscene.add(ambientLight);\n\nconst hemiLight = new THREE.HemisphereLight(0x87CEEB, 0x4caf50, 0.5);\nscene.add(hemiLight);\n\nconst dirLight = new THREE.DirectionalLight(0xfff5e6, 1.5);\ndirLight.position.set(10, 18, 10);\ndirLight.castShadow = true;\ndirLight.shadow.mapSize.set(2048, 2048);\ndirLight.shadow.camera.near = 0.5;\ndirLight.shadow.camera.far = 60;\nconst d = 25;\ndirLight.shadow.camera.left = -d;\ndirLight.shadow.camera.right = d;\ndirLight.shadow.camera.top = d;\ndirLight.shadow.camera.bottom = -d;\ndirLight.shadow.bias = -0.0005;\ndirLight.shadow.normalBias = 0.02;\nscene.add(dirLight);\n\nconst fillLight = new THREE.DirectionalLight(0xb0d8ff, 0.7);\nfillLight.position.set(-10, 10, -10);\nfillLight.castShadow = false;\nscene.add(fillLight);\n\nconst rimLight = new THREE.DirectionalLight(0xffccaa, 1.0);\nrimLight.position.set(-6, 8, -18);\nrimLight.castShadow = false;\nscene.add(rimLight);\n\nconst accentLight = new THREE.PointLight(0xffaa44, 0.6, 30);\naccentLight.position.set(2, 7, 8);\nscene.add(accentLight);\n\nconst groundGeo = new THREE.BoxGeometry(60, 4, 30);\nconst groundMat = new THREE.MeshStandardMaterial({ color: 0x5d4037 });\nconst ground = new THREE.Mesh(groundGeo, groundMat);\nground.position.y = -2;\nground.receiveShadow = true;\nscene.add(ground);\n\nconst grassGeo = new THREE.BoxGeometry(60, 0.3, 30);\nconst grassMat = new THREE.MeshStandardMaterial({ color: 0x4caf50 });\nconst grass = new THREE.Mesh(grassGeo, grassMat);\ngrass.position.y = 0.15;\ngrass.receiveShadow = true;\nscene.add(grass);\n\nfunction createPipe(x, z, h) {\n  const g = new THREE.Group();\n  const body = new THREE.Mesh(\n    new THREE.CylinderGeometry(1, 1, h, 32),\n    new THREE.MeshStandardMaterial({ color: 0x00aa00, roughness: 0.3 })\n  );\n  body.position.y = h / 2;\n  body.castShadow = true;\n  body.receiveShadow = true;\n\n  const rim = new THREE.Mesh(\n    new THREE.CylinderGeometry(1.2, 1.2, 0.5, 32),\n    new THREE.MeshStandardMaterial({ color: 0x00aa00, roughness: 0.3 })\n  );\n  rim.position.y = h;\n  rim.castShadow = true;\n\n  const hole = new THREE.Mesh(\n    new THREE.CylinderGeometry(0.85, 0.85, 0.1, 32),\n    new THREE.MeshStandardMaterial({ color: 0x1a3300 })\n  );\n  hole.position.y = h + 0.26;\n\n  g.add(body, rim, hole);\n  g.position.set(x, 0, z);\n  return g;\n}\nscene.add(createPipe(-5, 0, 2));\nscene.add(createPipe(8, -2, 2.5));\n\nfunction makeQuestionTexture() {\n  const c = document.createElement('canvas');\n  c.width = 256;\n  c.height = 256;\n  const x = c.getContext('2d');\n  x.fillStyle = '#f9a825';\n  x.fillRect(0, 0, 256, 256);\n  x.strokeStyle = '#f57f17';\n  x.lineWidth = 16;\n  x.strokeRect(8, 8, 240, 240);\n  x.fillStyle = '#f57f17';\n  x.beginPath(); x.arc(30, 30, 14, 0, Math.PI * 2); x.fill();\n  x.beginPath(); x.arc(226, 30, 14, 0, Math.PI * 2); x.fill();\n  x.beginPath(); x.arc(30, 226, 14, 0, Math.PI * 2); x.fill();\n  x.beginPath(); x.arc(226, 226, 14, 0, Math.PI * 2); x.fill();\n  x.fillStyle = '#ffffff';\n  x.font = 'bold 140px sans-serif';\n  x.textAlign = 'center';\n  x.textBaseline = 'middle';\n  x.fillText('?', 128, 128);\n  return new THREE.CanvasTexture(c);\n}\n\nconst qTex = makeQuestionTexture();\nconst qMat = new THREE.MeshStandardMaterial({ map: qTex, roughness: 0.4 });\nconst brickMat = new THREE.MeshStandardMaterial({ color: 0xb74d2d, roughness: 0.8 });\n\nconst blockGroup = new THREE.Group();\nconst qBlock = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), qMat);\nqBlock.position.set(0, 3.5, 0);\nqBlock.castShadow = true;\nblockGroup.add(qBlock);\n\nfor (let i = 1; i <= 2; i++) {\n  const b = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), brickMat);\n  b.position.set(i * 1.1, 3.5, 0);\n  b.castShadow = true;\n  blockGroup.add(b);\n  const b2 = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), brickMat);\n  b2.position.set(-i * 1.1, 3.5, 0);\n  b2.castShadow = true;\n  blockGroup.add(b2);\n}\nscene.add(blockGroup);\n\nconst coins = [];\nconst coinGeo = new THREE.CylinderGeometry(0.35, 0.35, 0.06, 32);\nconst coinMat = new THREE.MeshStandardMaterial({\n  color: 0xffd700,\n  metalness: 0.9,\n  roughness: 0.15,\n  emissive: 0xffa000,\n  emissiveIntensity: 0.2\n});\nfor (let i = 0; i < 6; i++) {\n  const coin = new THREE.Mesh(coinGeo, coinMat);\n  coin.rotation.x = Math.PI / 2;\n  coin.position.set(-2.2 + i * 1.1, 2.2, 0);\n  coin.castShadow = true;\n  scene.add(coin);\n  coins.push(coin);\n}\n\nconst hero = new THREE.Group();\n\nconst redMat = new THREE.MeshStandardMaterial({ color: 0xe3001b });\nconst blueMat = new THREE.MeshStandardMaterial({ color: 0x0043af });\nconst skinMat = new THREE.MeshStandardMaterial({ color: 0xffcc99 });\nconst brownMat = new THREE.MeshStandardMaterial({ color: 0x5d4037 });\nconst whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff });\nconst blackMat = new THREE.MeshStandardMaterial({ color: 0x111111 });\nconst yellowMat = new THREE.MeshStandardMaterial({ color: 0xffeb3b });\n\nconst head = new THREE.Mesh(new THREE.SphereGeometry(0.5, 32, 32), skinMat);\nhead.position.y = 2.85;\nhead.castShadow = true;\nhero.add(head);\n\nconst nose = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 16), skinMat);\nnose.position.set(0, 2.75, 0.45);\nhero.add(nose);\n\nconst eyeGeo = new THREE.SphereGeometry(0.06, 16, 16);\nconst leftEye = new THREE.Mesh(eyeGeo, blackMat);\nleftEye.position.set(-0.16, 2.9, 0.42);\nconst rightEye = new THREE.Mesh(eyeGeo, blackMat);\nrightEye.position.set(0.16, 2.9, 0.42);\nhero.add(leftEye, rightEye);\n\nconst stache = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.1, 0.08), blackMat);\nstache.position.set(0, 2.65, 0.48);\nhero.add(stache);\n\nconst hatGeo = new THREE.SphereGeometry(0.53, 32, 32, 0, Math.PI * 2, 0, Math.PI / 2);\nconst hat = new THREE.Mesh(hatGeo, redMat);\nhat.position.y = 2.9;\nhat.castShadow = true;\nhero.add(hat);\n\nconst brim = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.65, 0.04, 32), redMat);\nbrim.position.set(0, 2.82, 0.1);\nhero.add(brim);\n\nconst body = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.9, 0.55), blueMat);\nbody.position.y = 2.05;\nbody.castShadow = true;\nhero.add(body);\n\nconst shirt = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.5, 0.58), redMat);\nshirt.position.y = 2.25;\nhero.add(shirt);\n\nconst btnGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.06, 16);\nconst btn1 = new THREE.Mesh(btnGeo, yellowMat);\nbtn1.rotation.x = Math.PI / 2;\nbtn1.position.set(-0.18, 2.15, 0.3);\nconst btn2 = btn1.clone();\nbtn2.position.set(0.18, 2.15, 0.3);\nhero.add(btn1, btn2);\n\nconst armGeo = new THREE.CylinderGeometry(0.13, 0.13, 0.7, 16);\nconst leftArm = new THREE.Mesh(armGeo, redMat);\nleftArm.position.set(-0.55, 2.1, 0);\nleftArm.rotation.z = 0.4;\nconst rightArm = new THREE.Mesh(armGeo, redMat);\nrightArm.position.set(0.55, 2.1, 0);\nrightArm.rotation.z = -0.4;\n\nconst gloveGeo = new THREE.SphereGeometry(0.18, 16, 16);\nconst leftGlove = new THREE.Mesh(gloveGeo, whiteMat);\nleftGlove.position.set(-0.75, 1.75, 0.15);\nconst rightGlove = new THREE.Mesh(gloveGeo, whiteMat);\nrightGlove.position.set(0.75, 1.75, 0.15);\n\nhero.add(leftArm, rightArm, leftGlove, rightGlove);\n\nconst legGeo = new THREE.CylinderGeometry(0.16, 0.16, 0.7, 16);\nconst leftLeg = new THREE.Mesh(legGeo, blueMat);\nleftLeg.position.set(-0.22, 1.15, 0);\nconst rightLeg = new THREE.Mesh(legGeo, blueMat);\nrightLeg.position.set(0.22, 1.15, 0);\nhero.add(leftLeg, rightLeg);\n\nconst shoeGeo = new THREE.BoxGeometry(0.3, 0.22, 0.45);\nconst leftShoe = new THREE.Mesh(shoeGeo, brownMat);\nleftShoe.position.set(-0.22, 0.7, 0.05);\nconst rightShoe = new THREE.Mesh(shoeGeo, brownMat);\nrightShoe.position.set(0.22, 0.7, 0.05);\nhero.add(leftShoe, rightShoe);\n\nhero.position.set(3, -0.3, 2);\nhero.rotation.y = -0.6;\nscene.add(hero);\n\nfunction createBush(x, z) {\n  const g = new THREE.Group();\n  const mat = new THREE.MeshStandardMaterial({ color: 0x2e7d32 });\n  const m1 = new THREE.Mesh(new THREE.SphereGeometry(0.6, 16, 16), mat);\n  const m2 = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 16), mat);\n  m2.position.set(0.5, 0.1, 0);\n  const m3 = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 16), mat);\n  m3.position.set(-0.5, 0.1, 0);\n  g.add(m1, m2, m3);\n  g.position.set(x, 0.3, z);\n  return g;\n}\nscene.add(createBush(-3, 1));\nscene.add(createBush(5, 1));\n\nfunction createCloud(x, y, z, s) {\n  const g = new THREE.Group();\n  const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, flatShading: true });\n  const p1 = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 16), mat);\n  const p2 = new THREE.Mesh(new THREE.SphereGeometry(0.8, 16, 16), mat);\n  p2.position.set(0.9, 0.1, 0);\n  const p3 = new THREE.Mesh(new THREE.SphereGeometry(0.85, 16, 16), mat);\n  p3.position.set(-0.8, 0.05, 0);\n  g.add(p1, p2, p3);\n  g.position.set(x, y, z);\n  g.scale.setScalar(s);\n  return g;\n}\nconst clouds = [];\nclouds.push(createCloud(-12, 10, -12, 2));\nclouds.push(createCloud(6, 12, -18, 2.5));\nclouds.push(createCloud(14, 9, -6, 1.8));\nclouds.forEach(c => scene.add(c));\n\nconst hillMat = new THREE.MeshStandardMaterial({ color: 0x43a047 });\nconst hillGeo = new THREE.SphereGeometry(8, 32, 32, 0, Math.PI * 2, 0, Math.PI / 2);\nconst hill1 = new THREE.Mesh(hillGeo, hillMat);\nhill1.position.set(-18, 0.1, -10);\nhill1.scale.set(1, 0.5, 0.8);\nscene.add(hill1);\n\nconst hill2 = new THREE.Mesh(hillGeo, hillMat);\nhill2.position.set(20, 0.1, -12);\nhill2.scale.set(1.3, 0.4, 0.9);\nscene.add(hill2);\n\nconst pmremGenerator = new THREE.PMREMGenerator(renderer);\npmremGenerator.compileEquirectangularShader();\n\nconst envScene = new THREE.Scene();\nenvScene.background = new THREE.Color(0x5c94fc);\n\nconst envSun = new THREE.Mesh(\n  new THREE.SphereGeometry(4, 32, 32),\n  new THREE.MeshBasicMaterial({ color: 0xfffff0 })\n);\nenvSun.position.set(15, 20, 10);\nenvScene.add(envSun);\n\nconst envSky = new THREE.Mesh(\n  new THREE.SphereGeometry(60, 32, 32),\n  new THREE.MeshBasicMaterial({ color: 0x87CEEB, side: THREE.BackSide })\n);\nenvScene.add(envSky);\n\nconst envGround = new THREE.Mesh(\n  new THREE.PlaneGeometry(200, 200),\n  new THREE.MeshBasicMaterial({ color: 0x4caf50 })\n);\nenvGround.rotation.x = -Math.PI / 2;\nenvGround.position.y = -0.1;\nenvScene.add(envGround);\n\nconst envMap = pmremGenerator.fromScene(envScene, 0.04).texture;\nscene.environment = envMap;\npmremGenerator.dispose();\n\nlet time = 0;\nconst clock = new THREE.Clock();\n\nfunction animate() {\n  requestAnimationFrame(animate);\n  const dt = clock.getDelta();\n  time += dt;\n\n  coins.forEach((c, i) => {\n    c.rotation.y += dt * 4;\n    c.position.y = 2.2 + Math.sin(time * 3 + i * 1.2) * 0.15;\n  });\n\n  qBlock.position.y = 3.5 + Math.sin(time * 5) * 0.08;\n\n  hero.position.y = -0.3 + Math.max(0, Math.sin(time * 3)) * 1.2;\n\n  clouds.forEach((c, i) => {\n    c.position.x += dt * (0.3 + i * 0.1);\n    if (c.position.x > 30) c.position.x = -30;\n  });\n\n  const camAngle = time * 0.15;\n  camera.position.x = Math.cos(camAngle) * 10;\n  camera.position.z = Math.sin(camAngle) * 10;\n  camera.position.y = 5 + Math.sin(time * 0.2) * 1;\n  camera.lookAt(0, 2, 0);\n\n  renderer.render(scene, camera);\n}\n\nanimate();",
+          "previewUrl": null,
+          "skill": "threejs",
+          "outputKind": "code",
+          "mediaType": null,
+          "mediaUrl": null,
+          "mediaArtifactId": null,
+          "mediaDurationMs": null,
+          "mediaFps": null,
+          "mediaResolution": null,
+          "mediaBytes": null,
+          "assetPlan": null,
+          "explanation": "show me super maria experience",
+          "messageId": "message-2",
+          "workspace": null,
+          "source": "generate",
+          "createdAt": "2026-05-23T14:02:36.367Z",
+          "updatedAt": "2026-05-23T14:02:36.367Z",
+          "versionId": "version-1",
+          "version": 1,
+          "artifactId": "artifact-1779544956367-06d419",
+          "artifactVersion": 1
+        }
+      ],
+      "revisionPointer": 0
+    }
+  ],
+  "artifactPointer": 0,
+  "currentScene": {
+    "sessionId": "183e21d3-03e2-4109-a2ae-0dad4b961004",
+    "sceneId": "scene-1779544956366",
+    "code": "renderer.shadowMap.enabled = true;\nrenderer.shadowMap.type = THREE.PCFSoftShadowMap;\nrenderer.toneMapping = THREE.ACESFilmicToneMapping;\nrenderer.toneMappingExposure = 1.0;\n\nscene.background = new THREE.Color(0x5c94fc);\nscene.fog = new THREE.Fog(0x5c94fc, 25, 70);\n\ncamera.position.set(7, 5, 10);\ncamera.lookAt(0, 2, 0);\n\nconst ambientLight = new THREE.AmbientLight(0xffffff, 0.35);\nscene.add(ambientLight);\n\nconst hemiLight = new THREE.HemisphereLight(0x87CEEB, 0x4caf50, 0.5);\nscene.add(hemiLight);\n\nconst dirLight = new THREE.DirectionalLight(0xfff5e6, 1.5);\ndirLight.position.set(10, 18, 10);\ndirLight.castShadow = true;\ndirLight.shadow.mapSize.set(2048, 2048);\ndirLight.shadow.camera.near = 0.5;\ndirLight.shadow.camera.far = 60;\nconst d = 25;\ndirLight.shadow.camera.left = -d;\ndirLight.shadow.camera.right = d;\ndirLight.shadow.camera.top = d;\ndirLight.shadow.camera.bottom = -d;\ndirLight.shadow.bias = -0.0005;\ndirLight.shadow.normalBias = 0.02;\nscene.add(dirLight);\n\nconst fillLight = new THREE.DirectionalLight(0xb0d8ff, 0.7);\nfillLight.position.set(-10, 10, -10);\nfillLight.castShadow = false;\nscene.add(fillLight);\n\nconst rimLight = new THREE.DirectionalLight(0xffccaa, 1.0);\nrimLight.position.set(-6, 8, -18);\nrimLight.castShadow = false;\nscene.add(rimLight);\n\nconst accentLight = new THREE.PointLight(0xffaa44, 0.6, 30);\naccentLight.position.set(2, 7, 8);\nscene.add(accentLight);\n\nconst groundGeo = new THREE.BoxGeometry(60, 4, 30);\nconst groundMat = new THREE.MeshStandardMaterial({ color: 0x5d4037 });\nconst ground = new THREE.Mesh(groundGeo, groundMat);\nground.position.y = -2;\nground.receiveShadow = true;\nscene.add(ground);\n\nconst grassGeo = new THREE.BoxGeometry(60, 0.3, 30);\nconst grassMat = new THREE.MeshStandardMaterial({ color: 0x4caf50 });\nconst grass = new THREE.Mesh(grassGeo, grassMat);\ngrass.position.y = 0.15;\ngrass.receiveShadow = true;\nscene.add(grass);\n\nfunction createPipe(x, z, h) {\n  const g = new THREE.Group();\n  const body = new THREE.Mesh(\n    new THREE.CylinderGeometry(1, 1, h, 32),\n    new THREE.MeshStandardMaterial({ color: 0x00aa00, roughness: 0.3 })\n  );\n  body.position.y = h / 2;\n  body.castShadow = true;\n  body.receiveShadow = true;\n\n  const rim = new THREE.Mesh(\n    new THREE.CylinderGeometry(1.2, 1.2, 0.5, 32),\n    new THREE.MeshStandardMaterial({ color: 0x00aa00, roughness: 0.3 })\n  );\n  rim.position.y = h;\n  rim.castShadow = true;\n\n  const hole = new THREE.Mesh(\n    new THREE.CylinderGeometry(0.85, 0.85, 0.1, 32),\n    new THREE.MeshStandardMaterial({ color: 0x1a3300 })\n  );\n  hole.position.y = h + 0.26;\n\n  g.add(body, rim, hole);\n  g.position.set(x, 0, z);\n  return g;\n}\nscene.add(createPipe(-5, 0, 2));\nscene.add(createPipe(8, -2, 2.5));\n\nfunction makeQuestionTexture() {\n  const c = document.createElement('canvas');\n  c.width = 256;\n  c.height = 256;\n  const x = c.getContext('2d');\n  x.fillStyle = '#f9a825';\n  x.fillRect(0, 0, 256, 256);\n  x.strokeStyle = '#f57f17';\n  x.lineWidth = 16;\n  x.strokeRect(8, 8, 240, 240);\n  x.fillStyle = '#f57f17';\n  x.beginPath(); x.arc(30, 30, 14, 0, Math.PI * 2); x.fill();\n  x.beginPath(); x.arc(226, 30, 14, 0, Math.PI * 2); x.fill();\n  x.beginPath(); x.arc(30, 226, 14, 0, Math.PI * 2); x.fill();\n  x.beginPath(); x.arc(226, 226, 14, 0, Math.PI * 2); x.fill();\n  x.fillStyle = '#ffffff';\n  x.font = 'bold 140px sans-serif';\n  x.textAlign = 'center';\n  x.textBaseline = 'middle';\n  x.fillText('?', 128, 128);\n  return new THREE.CanvasTexture(c);\n}\n\nconst qTex = makeQuestionTexture();\nconst qMat = new THREE.MeshStandardMaterial({ map: qTex, roughness: 0.4 });\nconst brickMat = new THREE.MeshStandardMaterial({ color: 0xb74d2d, roughness: 0.8 });\n\nconst blockGroup = new THREE.Group();\nconst qBlock = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), qMat);\nqBlock.position.set(0, 3.5, 0);\nqBlock.castShadow = true;\nblockGroup.add(qBlock);\n\nfor (let i = 1; i <= 2; i++) {\n  const b = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), brickMat);\n  b.position.set(i * 1.1, 3.5, 0);\n  b.castShadow = true;\n  blockGroup.add(b);\n  const b2 = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), brickMat);\n  b2.position.set(-i * 1.1, 3.5, 0);\n  b2.castShadow = true;\n  blockGroup.add(b2);\n}\nscene.add(blockGroup);\n\nconst coins = [];\nconst coinGeo = new THREE.CylinderGeometry(0.35, 0.35, 0.06, 32);\nconst coinMat = new THREE.MeshStandardMaterial({\n  color: 0xffd700,\n  metalness: 0.9,\n  roughness: 0.15,\n  emissive: 0xffa000,\n  emissiveIntensity: 0.2\n});\nfor (let i = 0; i < 6; i++) {\n  const coin = new THREE.Mesh(coinGeo, coinMat);\n  coin.rotation.x = Math.PI / 2;\n  coin.position.set(-2.2 + i * 1.1, 2.2, 0);\n  coin.castShadow = true;\n  scene.add(coin);\n  coins.push(coin);\n}\n\nconst hero = new THREE.Group();\n\nconst redMat = new THREE.MeshStandardMaterial({ color: 0xe3001b });\nconst blueMat = new THREE.MeshStandardMaterial({ color: 0x0043af });\nconst skinMat = new THREE.MeshStandardMaterial({ color: 0xffcc99 });\nconst brownMat = new THREE.MeshStandardMaterial({ color: 0x5d4037 });\nconst whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff });\nconst blackMat = new THREE.MeshStandardMaterial({ color: 0x111111 });\nconst yellowMat = new THREE.MeshStandardMaterial({ color: 0xffeb3b });\n\nconst head = new THREE.Mesh(new THREE.SphereGeometry(0.5, 32, 32), skinMat);\nhead.position.y = 2.85;\nhead.castShadow = true;\nhero.add(head);\n\nconst nose = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 16), skinMat);\nnose.position.set(0, 2.75, 0.45);\nhero.add(nose);\n\nconst eyeGeo = new THREE.SphereGeometry(0.06, 16, 16);\nconst leftEye = new THREE.Mesh(eyeGeo, blackMat);\nleftEye.position.set(-0.16, 2.9, 0.42);\nconst rightEye = new THREE.Mesh(eyeGeo, blackMat);\nrightEye.position.set(0.16, 2.9, 0.42);\nhero.add(leftEye, rightEye);\n\nconst stache = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.1, 0.08), blackMat);\nstache.position.set(0, 2.65, 0.48);\nhero.add(stache);\n\nconst hatGeo = new THREE.SphereGeometry(0.53, 32, 32, 0, Math.PI * 2, 0, Math.PI / 2);\nconst hat = new THREE.Mesh(hatGeo, redMat);\nhat.position.y = 2.9;\nhat.castShadow = true;\nhero.add(hat);\n\nconst brim = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.65, 0.04, 32), redMat);\nbrim.position.set(0, 2.82, 0.1);\nhero.add(brim);\n\nconst body = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.9, 0.55), blueMat);\nbody.position.y = 2.05;\nbody.castShadow = true;\nhero.add(body);\n\nconst shirt = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.5, 0.58), redMat);\nshirt.position.y = 2.25;\nhero.add(shirt);\n\nconst btnGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.06, 16);\nconst btn1 = new THREE.Mesh(btnGeo, yellowMat);\nbtn1.rotation.x = Math.PI / 2;\nbtn1.position.set(-0.18, 2.15, 0.3);\nconst btn2 = btn1.clone();\nbtn2.position.set(0.18, 2.15, 0.3);\nhero.add(btn1, btn2);\n\nconst armGeo = new THREE.CylinderGeometry(0.13, 0.13, 0.7, 16);\nconst leftArm = new THREE.Mesh(armGeo, redMat);\nleftArm.position.set(-0.55, 2.1, 0);\nleftArm.rotation.z = 0.4;\nconst rightArm = new THREE.Mesh(armGeo, redMat);\nrightArm.position.set(0.55, 2.1, 0);\nrightArm.rotation.z = -0.4;\n\nconst gloveGeo = new THREE.SphereGeometry(0.18, 16, 16);\nconst leftGlove = new THREE.Mesh(gloveGeo, whiteMat);\nleftGlove.position.set(-0.75, 1.75, 0.15);\nconst rightGlove = new THREE.Mesh(gloveGeo, whiteMat);\nrightGlove.position.set(0.75, 1.75, 0.15);\n\nhero.add(leftArm, rightArm, leftGlove, rightGlove);\n\nconst legGeo = new THREE.CylinderGeometry(0.16, 0.16, 0.7, 16);\nconst leftLeg = new THREE.Mesh(legGeo, blueMat);\nleftLeg.position.set(-0.22, 1.15, 0);\nconst rightLeg = new THREE.Mesh(legGeo, blueMat);\nrightLeg.position.set(0.22, 1.15, 0);\nhero.add(leftLeg, rightLeg);\n\nconst shoeGeo = new THREE.BoxGeometry(0.3, 0.22, 0.45);\nconst leftShoe = new THREE.Mesh(shoeGeo, brownMat);\nleftShoe.position.set(-0.22, 0.7, 0.05);\nconst rightShoe = new THREE.Mesh(shoeGeo, brownMat);\nrightShoe.position.set(0.22, 0.7, 0.05);\nhero.add(leftShoe, rightShoe);\n\nhero.position.set(3, -0.3, 2);\nhero.rotation.y = -0.6;\nscene.add(hero);\n\nfunction createBush(x, z) {\n  const g = new THREE.Group();\n  const mat = new THREE.MeshStandardMaterial({ color: 0x2e7d32 });\n  const m1 = new THREE.Mesh(new THREE.SphereGeometry(0.6, 16, 16), mat);\n  const m2 = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 16), mat);\n  m2.position.set(0.5, 0.1, 0);\n  const m3 = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 16), mat);\n  m3.position.set(-0.5, 0.1, 0);\n  g.add(m1, m2, m3);\n  g.position.set(x, 0.3, z);\n  return g;\n}\nscene.add(createBush(-3, 1));\nscene.add(createBush(5, 1));\n\nfunction createCloud(x, y, z, s) {\n  const g = new THREE.Group();\n  const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, flatShading: true });\n  const p1 = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 16), mat);\n  const p2 = new THREE.Mesh(new THREE.SphereGeometry(0.8, 16, 16), mat);\n  p2.position.set(0.9, 0.1, 0);\n  const p3 = new THREE.Mesh(new THREE.SphereGeometry(0.85, 16, 16), mat);\n  p3.position.set(-0.8, 0.05, 0);\n  g.add(p1, p2, p3);\n  g.position.set(x, y, z);\n  g.scale.setScalar(s);\n  return g;\n}\nconst clouds = [];\nclouds.push(createCloud(-12, 10, -12, 2));\nclouds.push(createCloud(6, 12, -18, 2.5));\nclouds.push(createCloud(14, 9, -6, 1.8));\nclouds.forEach(c => scene.add(c));\n\nconst hillMat = new THREE.MeshStandardMaterial({ color: 0x43a047 });\nconst hillGeo = new THREE.SphereGeometry(8, 32, 32, 0, Math.PI * 2, 0, Math.PI / 2);\nconst hill1 = new THREE.Mesh(hillGeo, hillMat);\nhill1.position.set(-18, 0.1, -10);\nhill1.scale.set(1, 0.5, 0.8);\nscene.add(hill1);\n\nconst hill2 = new THREE.Mesh(hillGeo, hillMat);\nhill2.position.set(20, 0.1, -12);\nhill2.scale.set(1.3, 0.4, 0.9);\nscene.add(hill2);\n\nconst pmremGenerator = new THREE.PMREMGenerator(renderer);\npmremGenerator.compileEquirectangularShader();\n\nconst envScene = new THREE.Scene();\nenvScene.background = new THREE.Color(0x5c94fc);\n\nconst envSun = new THREE.Mesh(\n  new THREE.SphereGeometry(4, 32, 32),\n  new THREE.MeshBasicMaterial({ color: 0xfffff0 })\n);\nenvSun.position.set(15, 20, 10);\nenvScene.add(envSun);\n\nconst envSky = new THREE.Mesh(\n  new THREE.SphereGeometry(60, 32, 32),\n  new THREE.MeshBasicMaterial({ color: 0x87CEEB, side: THREE.BackSide })\n);\nenvScene.add(envSky);\n\nconst envGround = new THREE.Mesh(\n  new THREE.PlaneGeometry(200, 200),\n  new THREE.MeshBasicMaterial({ color: 0x4caf50 })\n);\nenvGround.rotation.x = -Math.PI / 2;\nenvGround.position.y = -0.1;\nenvScene.add(envGround);\n\nconst envMap = pmremGenerator.fromScene(envScene, 0.04).texture;\nscene.environment = envMap;\npmremGenerator.dispose();\n\nlet time = 0;\nconst clock = new THREE.Clock();\n\nfunction animate() {\n  requestAnimationFrame(animate);\n  const dt = clock.getDelta();\n  time += dt;\n\n  coins.forEach((c, i) => {\n    c.rotation.y += dt * 4;\n    c.position.y = 2.2 + Math.sin(time * 3 + i * 1.2) * 0.15;\n  });\n\n  qBlock.position.y = 3.5 + Math.sin(time * 5) * 0.08;\n\n  hero.position.y = -0.3 + Math.max(0, Math.sin(time * 3)) * 1.2;\n\n  clouds.forEach((c, i) => {\n    c.position.x += dt * (0.3 + i * 0.1);\n    if (c.position.x > 30) c.position.x = -30;\n  });\n\n  const camAngle = time * 0.15;\n  camera.position.x = Math.cos(camAngle) * 10;\n  camera.position.z = Math.sin(camAngle) * 10;\n  camera.position.y = 5 + Math.sin(time * 0.2) * 1;\n  camera.lookAt(0, 2, 0);\n\n  renderer.render(scene, camera);\n}\n\nanimate();",
+    "previewUrl": null,
+    "skill": "threejs",
+    "outputKind": "code",
+    "mediaType": null,
+    "mediaUrl": null,
+    "mediaArtifactId": null,
+    "mediaDurationMs": null,
+    "mediaFps": null,
+    "mediaResolution": null,
+    "mediaBytes": null,
+    "assetPlan": null,
+    "explanation": "show me super maria experience",
+    "messageId": "message-2",
+    "workspace": null,
+    "source": "generate",
+    "createdAt": "2026-05-23T14:02:36.367Z",
+    "updatedAt": "2026-05-23T14:02:36.367Z",
+    "versionId": "version-1",
+    "version": 1,
+    "artifactId": "artifact-1779544956367-06d419",
+    "artifactVersion": 1
+  },
+  "workspace": null,
+  "messages": [
+    {
+      "messageId": "user-ea072a0e-810d-4fdb-82b0-136961c8b520",
+      "role": "user",
+      "content": "show me super maria experience",
+      "kind": "input",
+      "metadata": {},
+      "createdAt": "2026-05-23T13:49:49.131Z",
+      "updatedAt": "2026-05-23T13:49:49.131Z"
+    },
+    {
+      "messageId": "message-2",
+      "role": "assistant",
+      "content": "show me super maria experience\n\nPreview is available in the workspace.",
+      "kind": "agent",
+      "error": null,
+      "meta": [
+        "requestId:req-ws-1779544189086-14ce86",
+        "scene:scene-1779544956366",
+        "skill:threejs",
+        "v1",
+        "assistantSource:agent-coordinator"
+      ],
+      "metadata": [],
+      "createdAt": "2026-05-23T13:49:52.523Z",
+      "updatedAt": "2026-05-23T14:02:36.367Z"
+    },
+    {
+      "messageId": "thought-turn_started-1779544193654",
+      "role": "thought",
+      "content": "Alright, I'm reading through your request now. Let me break this down.",
+      "kind": "thought",
+      "meta": [
+        "turn_started",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2"
+      ],
+      "metadata": [
+        "turn_started",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2"
+      ],
+      "createdAt": "2026-05-23T13:49:53.654Z",
+      "updatedAt": "2026-05-23T13:49:53.654Z"
+    },
+    {
+      "messageId": "thought-agent_thinking-1779544195528",
+      "role": "thought",
+      "content": "Planning the best approach — let me think through the steps.",
+      "kind": "thought",
+      "meta": [
+        "agent_thinking",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2"
+      ],
+      "metadata": [
+        "agent_thinking",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2"
+      ],
+      "createdAt": "2026-05-23T13:49:55.528Z",
+      "updatedAt": "2026-05-23T13:49:55.528Z"
+    },
+    {
+      "messageId": "thought-agent_tool_called-1779544195536",
+      "role": "thought",
+      "content": "Calling planner — let me see if the fix works...",
+      "kind": "thought",
+      "meta": [
+        "agent_tool_called",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2",
+        "toolName:planner"
+      ],
+      "metadata": [
+        "agent_tool_called",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2",
+        "toolName:planner"
+      ],
+      "createdAt": "2026-05-23T13:49:55.536Z",
+      "updatedAt": "2026-05-23T13:49:55.536Z"
+    },
+    {
+      "messageId": "thought-agent_tool_result-1779544195539",
+      "role": "thought",
+      "content": "planner finished — processing the result...",
+      "kind": "thought",
+      "meta": [
+        "agent_tool_result",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2",
+        "toolName:planner"
+      ],
+      "metadata": [
+        "agent_tool_result",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2",
+        "toolName:planner"
+      ],
+      "createdAt": "2026-05-23T13:49:55.539Z",
+      "updatedAt": "2026-05-23T13:49:55.539Z"
+    },
+    {
+      "messageId": "thought-agent_tool_called-1779544195542",
+      "role": "thought",
+      "content": "Using coder to verify my changes...",
+      "kind": "thought",
+      "meta": [
+        "agent_tool_called",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2",
+        "toolName:coder"
+      ],
+      "metadata": [
+        "agent_tool_called",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2",
+        "toolName:coder"
+      ],
+      "createdAt": "2026-05-23T13:49:55.542Z",
+      "updatedAt": "2026-05-23T13:49:55.542Z"
+    },
+    {
+      "messageId": "thought-agent_tool_result-1779544534362",
+      "role": "thought",
+      "content": "coder finished — processing the result...",
+      "kind": "thought",
+      "meta": [
+        "agent_tool_result",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2",
+        "toolName:coder"
+      ],
+      "metadata": [
+        "agent_tool_result",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2",
+        "toolName:coder"
+      ],
+      "createdAt": "2026-05-23T13:55:34.362Z",
+      "updatedAt": "2026-05-23T13:55:34.362Z"
+    },
+    {
+      "messageId": "thought-agent_tool_called-1779544534364",
+      "role": "thought",
+      "content": "Calling validator — let me see if the fix works...",
+      "kind": "thought",
+      "meta": [
+        "agent_tool_called",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2",
+        "toolName:validator"
+      ],
+      "metadata": [
+        "agent_tool_called",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2",
+        "toolName:validator"
+      ],
+      "createdAt": "2026-05-23T13:55:34.364Z",
+      "updatedAt": "2026-05-23T13:55:34.364Z"
+    },
+    {
+      "messageId": "thought-turn_error-1779544534416",
+      "role": "thought",
+      "content": "Unfortunately this didn't work as expected. Let me surface the issue.",
+      "kind": "thought",
+      "meta": [
+        "turn_error",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2",
+        "toolName:validator"
+      ],
+      "metadata": [
+        "turn_error",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2",
+        "toolName:validator"
+      ],
+      "createdAt": "2026-05-23T13:55:34.416Z",
+      "updatedAt": "2026-05-23T13:55:34.416Z"
+    },
+    {
+      "messageId": "thought-agent_tool_called-1779544534417",
+      "role": "thought",
+      "content": "Using coder to verify my changes...",
+      "kind": "thought",
+      "meta": [
+        "agent_tool_called",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2",
+        "toolName:coder"
+      ],
+      "metadata": [
+        "agent_tool_called",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2",
+        "toolName:coder"
+      ],
+      "createdAt": "2026-05-23T13:55:34.417Z",
+      "updatedAt": "2026-05-23T13:55:34.417Z"
+    },
+    {
+      "messageId": "thought-agent_tool_result-1779544774291",
+      "role": "thought",
+      "content": "Got the result from coder. Let me continue...",
+      "kind": "thought",
+      "meta": [
+        "agent_tool_result",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2",
+        "toolName:coder"
+      ],
+      "metadata": [
+        "agent_tool_result",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2",
+        "toolName:coder"
+      ],
+      "createdAt": "2026-05-23T13:59:34.291Z",
+      "updatedAt": "2026-05-23T13:59:34.291Z"
+    },
+    {
+      "messageId": "thought-agent_tool_called-1779544774292",
+      "role": "thought",
+      "content": "Running validator to check the code...",
+      "kind": "thought",
+      "meta": [
+        "agent_tool_called",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2",
+        "toolName:validator"
+      ],
+      "metadata": [
+        "agent_tool_called",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2",
+        "toolName:validator"
+      ],
+      "createdAt": "2026-05-23T13:59:34.292Z",
+      "updatedAt": "2026-05-23T13:59:34.292Z"
+    },
+    {
+      "messageId": "thought-turn_error-1779544774339",
+      "role": "thought",
+      "content": "Unfortunately this didn't work as expected. Let me surface the issue.",
+      "kind": "thought",
+      "meta": [
+        "turn_error",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2",
+        "toolName:validator"
+      ],
+      "metadata": [
+        "turn_error",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2",
+        "toolName:validator"
+      ],
+      "createdAt": "2026-05-23T13:59:34.339Z",
+      "updatedAt": "2026-05-23T13:59:34.339Z"
+    },
+    {
+      "messageId": "thought-agent_tool_called-1779544774340",
+      "role": "thought",
+      "content": "Calling coder — let me see if the fix works...",
+      "kind": "thought",
+      "meta": [
+        "agent_tool_called",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2",
+        "toolName:coder"
+      ],
+      "metadata": [
+        "agent_tool_called",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2",
+        "toolName:coder"
+      ],
+      "createdAt": "2026-05-23T13:59:34.340Z",
+      "updatedAt": "2026-05-23T13:59:34.340Z"
+    },
+    {
+      "messageId": "thought-agent_tool_result-1779544956306",
+      "role": "thought",
+      "content": "coder returned data. Incorporating it into my thinking...",
+      "kind": "thought",
+      "meta": [
+        "agent_tool_result",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2",
+        "toolName:coder"
+      ],
+      "metadata": [
+        "agent_tool_result",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2",
+        "toolName:coder"
+      ],
+      "createdAt": "2026-05-23T14:02:36.306Z",
+      "updatedAt": "2026-05-23T14:02:36.306Z"
+    },
+    {
+      "messageId": "thought-agent_tool_called-1779544956307",
+      "role": "thought",
+      "content": "Using validator to verify my changes...",
+      "kind": "thought",
+      "meta": [
+        "agent_tool_called",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2",
+        "toolName:validator"
+      ],
+      "metadata": [
+        "agent_tool_called",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2",
+        "toolName:validator"
+      ],
+      "createdAt": "2026-05-23T14:02:36.307Z",
+      "updatedAt": "2026-05-23T14:02:36.307Z"
+    },
+    {
+      "messageId": "thought-agent_tool_result-1779544956364",
+      "role": "thought",
+      "content": "validator finished — processing the result...",
+      "kind": "thought",
+      "meta": [
+        "agent_tool_result",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2",
+        "toolName:validator"
+      ],
+      "metadata": [
+        "agent_tool_result",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2",
+        "toolName:validator"
+      ],
+      "createdAt": "2026-05-23T14:02:36.364Z",
+      "updatedAt": "2026-05-23T14:02:36.364Z"
+    },
+    {
+      "messageId": "thought-agent_tool_called-1779544956365",
+      "role": "thought",
+      "content": "Using executor to verify my changes...",
+      "kind": "thought",
+      "meta": [
+        "agent_tool_called",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2",
+        "toolName:executor"
+      ],
+      "metadata": [
+        "agent_tool_called",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2",
+        "toolName:executor"
+      ],
+      "createdAt": "2026-05-23T14:02:36.365Z",
+      "updatedAt": "2026-05-23T14:02:36.365Z"
+    },
+    {
+      "messageId": "thought-agent_tool_result-1779544956366",
+      "role": "thought",
+      "content": "executor finished — processing the result...",
+      "kind": "thought",
+      "meta": [
+        "agent_tool_result",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2",
+        "toolName:executor"
+      ],
+      "metadata": [
+        "agent_tool_result",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2",
+        "toolName:executor"
+      ],
+      "createdAt": "2026-05-23T14:02:36.366Z",
+      "updatedAt": "2026-05-23T14:02:36.366Z"
+    },
+    {
+      "messageId": "thought-turn_complete-1779544956366",
+      "role": "thought",
+      "content": "That's a wrap — your visualization should be live now.",
+      "kind": "thought",
+      "meta": [
+        "turn_complete",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2"
+      ],
+      "metadata": [
+        "turn_complete",
+        "requestId:req-ws-1779544189086-14ce86",
+        "messageId:message-2"
+      ],
+      "createdAt": "2026-05-23T14:02:36.366Z",
+      "updatedAt": "2026-05-23T14:02:36.366Z"
+    }
+  ],
+  "orchestrationTrace": [
+    {
+      "step": "turn_complete",
+      "payload": {
+        "sessionId": "183e21d3-03e2-4109-a2ae-0dad4b961004",
+        "mode": "agent",
+        "messageCount": 21,
+        "toolCalls": 8,
+        "toolResults": 0,
+        "agentSuccess": true,
+        "agentError": null,
+        "durationMs": 761457
+      },
+      "timestamp": "2026-05-23T14:02:41.038Z"
+    }
+  ],
+  "createdAt": "2026-05-21T11:52:09.97+00:00",
+  "updatedAt": "2026-05-23T14:08:48.799Z"
+}

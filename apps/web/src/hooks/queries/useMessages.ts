@@ -58,7 +58,7 @@ export function useInvalidateMessages(sessionId: string | null) {
  * WebSocket streaming updates still write directly to Zustand during active turns.
  */
 export function useMessageSync(sessionId: string | null) {
-  const { data, isSuccess, dataUpdatedAt } = useSessionMessages(sessionId);
+  const { data, isSuccess, dataUpdatedAt, isFetching } = useSessionMessages(sessionId);
   const setMessages = useChatStore((s) => s.setMessages);
   const lastSyncedAtRef = useRef<number>(0);
 
@@ -98,6 +98,8 @@ export function useMessageSync(sessionId: string | null) {
     const final = dedupeMessages([...merged, ...preserved]);
     setMessages(sessionId, final);
   }, [data, isSuccess, dataUpdatedAt, sessionId, setMessages]);
+
+  return { isFetching };
 }
 
 // ── sendMessage mutation with optimistic updates ──

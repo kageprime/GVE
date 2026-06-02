@@ -28,6 +28,8 @@ async function getDaytonaFilesystem(
 ): Promise<{
   filesystem: any;
   executeCommand: (cmd: string, opts?: { timeoutMs?: number }) => Promise<string>;
+  nativeFs: any;
+  sessionDir: string;
 } | null> {
   try {
     const { getWorkspace } = await import(
@@ -35,7 +37,12 @@ async function getDaytonaFilesystem(
     );
     const ws = getWorkspace(sessionId);
     if (ws?.filesystem) {
-      return { filesystem: ws.filesystem, executeCommand: ws.executeCommand };
+      return {
+        filesystem: ws.filesystem,
+        executeCommand: ws.executeCommand,
+        nativeFs: ws.nativeFs,
+        sessionDir: ws.sessionDir ?? "/home/user/projects",
+      };
     }
   } catch {
     // Daytona store not available — use Docker
@@ -253,6 +260,40 @@ export class SandboxFilesTool extends Tool {
     old_string: string;
     new_string: string;
   }) {
+    // Try Daytona first
+    const daytona = await getDaytonaFilesystem(args.session_id);
+    if (daytona?.nativeFs) {
+      const safePath = resolveSafePath(daytona.sessionDir, args.file_path);
+      if (!safePath) {
+        return this.failResponse("Invalid file path: path traversal detected.");
+      }
+      try {
+        const buffer = await daytona.nativeFs.downloadFile(safePath);
+        const content = buffer.toString("utf-8");
+        const occurrences = content.split(args.old_string).length - 1;
+        if (occurrences === 0) {
+          return this.failResponse(
+            `old_string not found in ${args.file_path}. The content may have changed.`
+          );
+        }
+        if (occurrences > 1) {
+          return this.failResponse(
+            `old_string appears ${occurrences} times in ${args.file_path}. Provide more context to make it unique.`
+          );
+        }
+        const newContent = content.replace(args.old_string, args.new_string);
+        await daytona.nativeFs.uploadFile(Buffer.from(newContent, "utf-8"), safePath);
+        return this.successResponse({
+          file_path: args.file_path,
+          replaced: true,
+          replacements: 1,
+        });
+      } catch (err: any) {
+        return this.failResponse(`Failed to edit file: ${err.message}`);
+      }
+    }
+
+    // Fallback: Docker local filesystem
     const workspace = await getWorkspacePath(args.session_id);
     if (!workspace) {
       return this.failResponse(`No active sandbox for session ${args.session_id}`);
@@ -435,6 +476,25 @@ export class SandboxFilesTool extends Tool {
     },
   })
   async deleteFile(args: { session_id: string; file_path: string }) {
+    // Try Daytona first
+    const daytona = await getDaytonaFilesystem(args.session_id);
+    if (daytona?.nativeFs) {
+      const safePath = resolveSafePath(daytona.sessionDir, args.file_path);
+      if (!safePath) {
+        return this.failResponse("Invalid file path: path traversal detected.");
+      }
+      try {
+        await daytona.nativeFs.deleteFile(safePath, true);
+        return this.successResponse({
+          file_path: args.file_path,
+          deleted: true,
+        });
+      } catch (err: any) {
+        return this.failResponse(`Failed to delete: ${err.message}`);
+      }
+    }
+
+    // Fallback: Docker local filesystem
     const workspace = await getWorkspacePath(args.session_id);
     if (!workspace) {
       return this.failResponse(`No active sandbox for session ${args.session_id}`);

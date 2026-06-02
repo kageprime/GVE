@@ -17,6 +17,8 @@ export interface DaytonaWorkspaceHandle {
   workspace: any;
   filesystem: any;
   executeCommand(command: string, options?: { timeoutMs?: number }): Promise<string>;
+  nativeFs: any; // Daytona SDK FileSystem instance
+  sessionDir: string; // Session-scoped working directory inside the sandbox
 }
 
 const handles = new Map<string, DaytonaWorkspaceHandle>();

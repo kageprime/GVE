@@ -14,7 +14,10 @@ const hasClerkKey = Boolean(
   process.env.CLERK_PUBLISHABLE_KEY !== DUMMY_KEY
 );
 
-/* In production, auth MUST be configured. Fail closed. */
+/* In non-production, always bypass real auth so dev mode never 401s.
+   In production, auth MUST be configured. Fail closed. */
+const enforceRealAuth = isProduction && hasClerkKey;
+
 if (isProduction && !hasClerkKey) {
   throw new Error(
     "FATAL: Missing CLERK_SECRET_KEY or CLERK_PUBLISHABLE_KEY in production. " +
@@ -30,7 +33,7 @@ function authErrorResponse(res: Response, status: number, message: string) {
 
 /* ── Conditional Clerk middleware ── */
 export function conditionalClerkMiddleware() {
-  if (hasClerkKey) {
+  if (enforceRealAuth) {
     return clerkMiddleware();
   }
   return (req: Request, _res: Response, next: NextFunction) => {
@@ -48,7 +51,7 @@ export function requireAuth(
   res: Response,
   next: NextFunction
 ): void {
-  if (hasClerkKey) {
+  if (enforceRealAuth) {
     let auth: { userId: string | null; sessionId: string | null };
     try {
       auth = conditionalGetAuth(req);
@@ -68,7 +71,7 @@ export function requireAuth(
 
 /* ── Conditional getAuth ── */
 export function conditionalGetAuth(req: Request): { userId: string | null; sessionId: string | null } {
-  if (hasClerkKey) {
+  if (enforceRealAuth) {
     return clerkGetAuth(req);
   }
   const mock = (req as any).auth;

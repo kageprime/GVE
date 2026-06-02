@@ -1,9 +1,9 @@
-import { Annotation, END, START, StateGraph } from "@langchain/langgraph";
 import { z } from "zod";
 
-import { parseIntentFromQuery } from "./intent-classifier.js";
-import { emitPipelineProgress, requestSchema, resolveRequestedQuality } from "./utils.js";
+import { PlannerAgent } from "../agents/planner-agent.js";
+import { requestSchema, resolveRequestedQuality } from "./utils.js";
 import { selectSkillForIntent } from "../skills/registry.js";
+import { parseIntentFromQuery } from "./intent-classifier.js";
 import { warmupSandboxForSkill } from "../sandbox/skill-runtime.js";
 
 const taskSchema = z.object({
@@ -97,88 +97,54 @@ function createTasks(selectedSkill: string) {
   ] as const;
 }
 
-const planState = Annotation.Root({
-  request: Annotation,
-  parsedIntent: Annotation,
-  selectedSkill: Annotation,
-  skillFallback: Annotation,
-  planId: Annotation,
-  tasks: Annotation,
-  summary: Annotation,
-  progress: Annotation
-});
+/**
+ * Plan tasks using the autonomous PlannerAgent instead of a LangGraph DAG.
+ * The planner parses intent, selects the skill, and builds a task list.
+ */
+export async function planTasks(input: unknown) {
+  const request = requestSchema.parse(input);
+  const planner = new PlannerAgent();
 
-const parseIntentNode = (state: any) => {
-  emitPipelineProgress(state.progress, "parse_intent", "running");
-  return { parsedIntent: parseIntentFromQuery(state.request.query) };
-};
+  const planResult = await planner.execute(
+    {
+      sessionId: "plan-session",
+      query: request.query,
+      preferences: request.preferences ?? {},
+      sessionState: null,
+      assistantMessageId: "plan-msg",
+      turnRequestId: `plan-${Date.now()}`,
+      userMessage: request,
+    } as any
+  );
 
-const selectSkillNode = (state: any) => {
-  emitPipelineProgress(state.progress, "select_skill", "running");
-  const requestedSkill = state.request.preferences?.skill;
-  const selection = selectSkillForIntent(state.parsedIntent, requestedSkill);
+  const selectedSkill = (planResult.data as any)?.skill ?? "threejs";
+  const quality = resolveRequestedQuality(request, selectedSkill);
+  const tasks = createTasks(selectedSkill);
 
   try {
-    warmupSandboxForSkill(selection.selectedSkill);
+    warmupSandboxForSkill(selectedSkill);
   } catch {
-    // Warmup is best-effort and should not block planning.
+    // Warmup is best-effort
   }
 
-  if (selection.fallbackRequired && requestedSkill && requestedSkill !== "auto") {
-    return {
-      selectedSkill: selection.selectedSkill,
-      skillFallback: {
-        from: requestedSkill,
-        to: selection.selectedSkill,
-        reason: selection.reason
-      },
-      skillRanking: selection.ranked,
-      selectionReason: selection.reason
-    };
-  }
+  const fallback = (planResult.data as any)?.fallback;
+  const summary = `Planned ${tasks.length} multi-agent tasks for ${selectedSkill} (${quality} quality).${
+    fallback ? ` Fallback applied: ${fallback.from} -> ${fallback.to}.` : ""
+  }`;
 
   return {
-    selectedSkill: selection.selectedSkill,
-    skillFallback: selection.fallbackRequired ? { from: "auto", to: selection.selectedSkill, reason: selection.reason } : null,
-    skillRanking: selection.ranked,
-    selectionReason: selection.reason
+    planId: `plan-${Date.now()}`,
+    summary,
+    tasks
   };
-};
+}
 
-const buildTaskPlanNode = (state: any) => {
-  const planId = `plan-${Date.now()}`;
-  const quality = resolveRequestedQuality(state.request, state.selectedSkill);
-  const tasks = createTasks(state.selectedSkill);
-  return {
-    planId,
-    tasks,
-    summary: `Planned ${tasks.length} LangGraph-orchestrated tasks for ${state.selectedSkill} (${quality} quality).${
-      state.skillFallback
-        ? ` Fallback applied: ${state.skillFallback.from} -> ${state.skillFallback.to}.`
-        : ""
-    } ${state.selectionReason ? `Selection note: ${state.selectionReason}` : ""}`
-  };
-};
-
-const planningGraph = new StateGraph(planState)
-  .addNode("parse_intent", parseIntentNode)
-  .addNode("select_skill", selectSkillNode)
-  .addNode("build_task_plan", buildTaskPlanNode)
-  .addEdge(START, "parse_intent")
-  .addEdge("parse_intent", "select_skill")
-  .addEdge("select_skill", "build_task_plan")
-  .addEdge("build_task_plan", END)
-  .compile();
-
-const executionState = Annotation.Root({
-  planId: Annotation,
-  task: Annotation,
-  output: Annotation,
-  artifact: Annotation,
-  status: Annotation
-});
-
-const runTaskNode = (state: any) => {
+/**
+ * Execute a single task from a plan.
+ * Now a thin deterministic runner instead of a LangGraph node.
+ */
+export async function executeTask(input: unknown) {
+  const request = executeRequestSchema.parse(input);
   const outputs: Record<string, string> = {
     parse_intent: "Intent parsed with confidence 0.94 and extracted entities.",
     select_skill: "Skill selected from weighted ranking with deterministic tie-break.",
@@ -190,41 +156,10 @@ const runTaskNode = (state: any) => {
   };
 
   return {
-    status: "completed",
-    output: outputs[state.task.action],
-    artifact: state.task.action === "execute_code" ? "preview://sandbox/mock-scene" : undefined
-  };
-};
-
-const taskExecutionGraph = new StateGraph(executionState)
-  .addNode("run_task", runTaskNode)
-  .addEdge(START, "run_task")
-  .addEdge("run_task", END)
-  .compile();
-
-export async function planTasks(input: unknown) {
-  const request = requestSchema.parse(input);
-  const result = await planningGraph.invoke({ request });
-
-  return {
-    planId: result.planId,
-    summary: result.summary,
-    tasks: result.tasks
-  };
-}
-
-export async function executeTask(input: unknown) {
-  const request = executeRequestSchema.parse(input);
-  const result = await taskExecutionGraph.invoke({
-    planId: request.planId,
-    task: request.task
-  });
-
-  return {
     planId: request.planId,
     taskId: request.task.id,
-    status: result.status,
-    output: result.output,
-    artifact: result.artifact
+    status: "completed",
+    output: outputs[request.task.action] ?? `Task ${request.task.action} completed.`,
+    artifact: request.task.action === "execute_code" ? "preview://sandbox/mock-scene" : undefined
   };
 }

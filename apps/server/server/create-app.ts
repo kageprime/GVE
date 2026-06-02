@@ -29,10 +29,14 @@ export async function createApp(): Promise<express.Express> {
   const app = express();
   app.set("trust proxy", 1);
 
+  const isProd = process.env.NODE_ENV === "production";
   const corsOrigin = process.env.CORS_ORIGIN;
+  /* In dev, default to reflecting the request origin so the frontend
+     (localhost:5173) works without explicit CORS_ORIGIN config. */
+  const origin = corsOrigin ?? (isProd ? false : true);
   app.use(cors({
-    origin: corsOrigin ?? false,
-    credentials: Boolean(corsOrigin),
+    origin,
+    credentials: Boolean(origin),
     methods: ["GET", "POST", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "x-user-id", "x-request-id"],
     maxAge: 86400

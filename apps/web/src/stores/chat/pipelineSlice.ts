@@ -10,6 +10,7 @@ export interface PipelineSlice {
   activeRequestId: string | null;
   thinkingText: string | null;
   thinkingStep: string;
+  thinkingToolName: string | null;
   showScrollToLatest: boolean;
   taskProgressBySession: Record<string, SessionTaskProgress>;
   actionBlocksByMessage: Record<string, ActionBlock[]>;
@@ -18,7 +19,7 @@ export interface PipelineSlice {
 
   setIsSending: (value: boolean) => void;
   setActiveRequestId: (id: string | null) => void;
-  setThinking: (text: string | null, step?: string) => void;
+  setThinking: (text: string | null, step?: string, toolName?: string | null) => void;
   addMessage: (sessionId: string, message: SessionMessage) => void;
   stopTurn: () => void;
   setActionBlocks: (messageId: string, blocks: ActionBlock[]) => void;
@@ -33,6 +34,7 @@ export const createPipelineSlice: StateCreator<ChatState, [], [], PipelineSlice>
   activeRequestId: null,
   thinkingText: null,
   thinkingStep: "idle",
+  thinkingToolName: null,
   showScrollToLatest: true,
   taskProgressBySession: {},
   actionBlocksByMessage: {},
@@ -47,8 +49,8 @@ export const createPipelineSlice: StateCreator<ChatState, [], [], PipelineSlice>
 
   setActiveRequestId: (id) => set({ activeRequestId: id }),
 
-  setThinking: (text, step) =>
-    set({ thinkingText: text, thinkingStep: step ?? "thinking" }),
+  setThinking: (text, step, toolName) =>
+    set({ thinkingText: text, thinkingStep: step ?? "thinking", thinkingToolName: toolName ?? null }),
 
   addMessage: (sessionId, message) =>
     set((state) => ({

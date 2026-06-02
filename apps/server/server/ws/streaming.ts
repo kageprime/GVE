@@ -1,4 +1,4 @@
-import { wsClients, sessionClients } from "./handler.js";
+import { wsClients, sessionClients, wsEventSequence, eventReplayBuffer, incrementWsEventSequence } from "./ws-state.js";
 
 import { generateThought, tokenizeThought } from "../pipeline/thoughts.js";
 import { appendSessionMessage } from "../state/session.js";
@@ -37,13 +37,10 @@ export interface ReplayEvent {
   payload: any;
 }
 
-export const eventReplayBuffer: ReplayEvent[] = [];
-export let wsEventSequence = 0;
-
 export function createReplayableEvent(type: string, payload: any): ReplayEvent {
   const event = {
     type,
-    seq: ++wsEventSequence,
+    seq: incrementWsEventSequence(),
     timestamp: new Date().toISOString(),
     payload
   };
@@ -147,11 +144,16 @@ export async function broadcastThought(sessionId: string, step: string, context:
     ? context.messageId.trim()
     : null;
 
+  const toolName = typeof context.toolName === "string" && context.toolName.trim()
+    ? context.toolName.trim()
+    : null;
+
   const thoughtPayloadBase = {
     sessionId,
     step,
     requestId,
-    messageId
+    messageId,
+    toolName,
   };
 
   if (thoughtStreamingMode === "token") {
@@ -212,6 +214,7 @@ export async function broadcastThought(sessionId: string, step: string, context:
       step,
       requestId ? `requestId:${requestId}` : null,
       messageId ? `messageId:${messageId}` : null,
+      toolName ? `toolName:${toolName}` : null,
       context.stageDurationMs ? `durationMs:${context.stageDurationMs}` : null
     ].filter(Boolean)
   });

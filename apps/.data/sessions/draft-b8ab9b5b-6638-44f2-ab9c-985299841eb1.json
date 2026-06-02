@@ -1,0 +1,461 @@
+{
+  "sessionId": "draft-b8ab9b5b-6638-44f2-ab9c-985299841eb1",
+  "status": "idle",
+  "artifacts": [],
+  "artifactPointer": -1,
+  "currentScene": null,
+  "workspace": null,
+  "messages": [
+    {
+      "messageId": "thought-turn_complete-1779355311456",
+      "role": "thought",
+      "content": "Complete. The scene has been generated and synced.",
+      "kind": "thought",
+      "error": null,
+      "meta": [
+        "turn_complete",
+        "requestId:req-ws-1779355167445-4b3911",
+        "messageId:message-5"
+      ],
+      "metadata": [
+        "turn_complete",
+        "requestId:req-ws-1779355167445-4b3911",
+        "messageId:message-5"
+      ],
+      "createdAt": "2026-05-21T09:21:51.456+00:00",
+      "updatedAt": "2026-05-21T09:21:51.456+00:00"
+    },
+    {
+      "messageId": "thought-turn_error-1779355310584",
+      "role": "thought",
+      "content": "I hit an error in the pipeline. Here are the details...",
+      "kind": "thought",
+      "error": null,
+      "meta": [
+        "turn_error",
+        "requestId:req-ws-1779355167445-4b3911",
+        "messageId:message-5"
+      ],
+      "metadata": [
+        "turn_error",
+        "requestId:req-ws-1779355167445-4b3911",
+        "messageId:message-5"
+      ],
+      "createdAt": "2026-05-21T09:21:50.584+00:00",
+      "updatedAt": "2026-05-21T09:21:50.584+00:00"
+    },
+    {
+      "messageId": "thought-agent_tool_called-1779355310239",
+      "role": "thought",
+      "content": "Running executor to check the code...",
+      "kind": "thought",
+      "error": null,
+      "meta": [
+        "agent_tool_called",
+        "requestId:req-ws-1779355167445-4b3911",
+        "messageId:message-5"
+      ],
+      "metadata": [
+        "agent_tool_called",
+        "requestId:req-ws-1779355167445-4b3911",
+        "messageId:message-5"
+      ],
+      "createdAt": "2026-05-21T09:21:50.239+00:00",
+      "updatedAt": "2026-05-21T09:21:50.239+00:00"
+    },
+    {
+      "messageId": "thought-agent_tool_result-1779355310238",
+      "role": "thought",
+      "content": "validator returned data. Incorporating it into my thinking...",
+      "kind": "thought",
+      "error": null,
+      "meta": [
+        "agent_tool_result",
+        "requestId:req-ws-1779355167445-4b3911",
+        "messageId:message-5"
+      ],
+      "metadata": [
+        "agent_tool_result",
+        "requestId:req-ws-1779355167445-4b3911",
+        "messageId:message-5"
+      ],
+      "createdAt": "2026-05-21T09:21:50.238+00:00",
+      "updatedAt": "2026-05-21T09:21:50.238+00:00"
+    },
+    {
+      "messageId": "thought-agent_tool_called-1779355310222",
+      "role": "thought",
+      "content": "Using validator to verify my changes...",
+      "kind": "thought",
+      "error": null,
+      "meta": [
+        "agent_tool_called",
+        "requestId:req-ws-1779355167445-4b3911",
+        "messageId:message-5"
+      ],
+      "metadata": [
+        "agent_tool_called",
+        "requestId:req-ws-1779355167445-4b3911",
+        "messageId:message-5"
+      ],
+      "createdAt": "2026-05-21T09:21:50.223+00:00",
+      "updatedAt": "2026-05-21T09:21:50.223+00:00"
+    },
+    {
+      "messageId": "thought-agent_tool_result-1779355310219",
+      "role": "thought",
+      "content": "Got the result from coder. Let me continue...",
+      "kind": "thought",
+      "error": null,
+      "meta": [
+        "agent_tool_result",
+        "requestId:req-ws-1779355167445-4b3911",
+        "messageId:message-5"
+      ],
+      "metadata": [
+        "agent_tool_result",
+        "requestId:req-ws-1779355167445-4b3911",
+        "messageId:message-5"
+      ],
+      "createdAt": "2026-05-21T09:21:50.219+00:00",
+      "updatedAt": "2026-05-21T09:21:50.219+00:00"
+    },
+    {
+      "messageId": "thought-agent_tool_called-1779355238904",
+      "role": "thought",
+      "content": "Using coder to verify my changes...",
+      "kind": "thought",
+      "error": null,
+      "meta": [
+        "agent_tool_called",
+        "requestId:req-ws-1779355167445-4b3911",
+        "messageId:message-5"
+      ],
+      "metadata": [
+        "agent_tool_called",
+        "requestId:req-ws-1779355167445-4b3911",
+        "messageId:message-5"
+      ],
+      "createdAt": "2026-05-21T09:20:38.904+00:00",
+      "updatedAt": "2026-05-21T09:20:38.904+00:00"
+    },
+    {
+      "messageId": "thought-turn_error-1779355238904",
+      "role": "thought",
+      "content": "Something went wrong during execution. Let me show you what happened.",
+      "kind": "thought",
+      "error": null,
+      "meta": [
+        "turn_error",
+        "requestId:req-ws-1779355167445-4b3911",
+        "messageId:message-5"
+      ],
+      "metadata": [
+        "turn_error",
+        "requestId:req-ws-1779355167445-4b3911",
+        "messageId:message-5"
+      ],
+      "createdAt": "2026-05-21T09:20:38.904+00:00",
+      "updatedAt": "2026-05-21T09:20:38.904+00:00"
+    },
+    {
+      "messageId": "thought-agent_tool_called-1779355238523",
+      "role": "thought",
+      "content": "Calling executor — let me see if the fix works...",
+      "kind": "thought",
+      "error": null,
+      "meta": [
+        "agent_tool_called",
+        "requestId:req-ws-1779355167445-4b3911",
+        "messageId:message-5"
+      ],
+      "metadata": [
+        "agent_tool_called",
+        "requestId:req-ws-1779355167445-4b3911",
+        "messageId:message-5"
+      ],
+      "createdAt": "2026-05-21T09:20:38.523+00:00",
+      "updatedAt": "2026-05-21T09:20:38.523+00:00"
+    },
+    {
+      "messageId": "thought-agent_tool_result-1779355238522",
+      "role": "thought",
+      "content": "Got the result from validator. Let me continue...",
+      "kind": "thought",
+      "error": null,
+      "meta": [
+        "agent_tool_result",
+        "requestId:req-ws-1779355167445-4b3911",
+        "messageId:message-5"
+      ],
+      "metadata": [
+        "agent_tool_result",
+        "requestId:req-ws-1779355167445-4b3911",
+        "messageId:message-5"
+      ],
+      "createdAt": "2026-05-21T09:20:38.522+00:00",
+      "updatedAt": "2026-05-21T09:20:38.522+00:00"
+    },
+    {
+      "messageId": "thought-agent_tool_called-1779355238459",
+      "role": "thought",
+      "content": "Running validator to check the code...",
+      "kind": "thought",
+      "error": null,
+      "meta": [
+        "agent_tool_called",
+        "requestId:req-ws-1779355167445-4b3911",
+        "messageId:message-5"
+      ],
+      "metadata": [
+        "agent_tool_called",
+        "requestId:req-ws-1779355167445-4b3911",
+        "messageId:message-5"
+      ],
+      "createdAt": "2026-05-21T09:20:38.461+00:00",
+      "updatedAt": "2026-05-21T09:20:38.461+00:00"
+    },
+    {
+      "messageId": "thought-agent_tool_result-1779355238458",
+      "role": "thought",
+      "content": "coder returned data. Incorporating it into my thinking...",
+      "kind": "thought",
+      "error": null,
+      "meta": [
+        "agent_tool_result",
+        "requestId:req-ws-1779355167445-4b3911",
+        "messageId:message-5"
+      ],
+      "metadata": [
+        "agent_tool_result",
+        "requestId:req-ws-1779355167445-4b3911",
+        "messageId:message-5"
+      ],
+      "createdAt": "2026-05-21T09:20:38.458+00:00",
+      "updatedAt": "2026-05-21T09:20:38.458+00:00"
+    },
+    {
+      "messageId": "thought-agent_tool_called-1779355172612",
+      "role": "thought",
+      "content": "Using coder to verify my changes...",
+      "kind": "thought",
+      "error": null,
+      "meta": [
+        "agent_tool_called",
+        "requestId:req-ws-1779355167445-4b3911",
+        "messageId:message-5"
+      ],
+      "metadata": [
+        "agent_tool_called",
+        "requestId:req-ws-1779355167445-4b3911",
+        "messageId:message-5"
+      ],
+      "createdAt": "2026-05-21T09:19:32.612+00:00",
+      "updatedAt": "2026-05-21T09:19:32.612+00:00"
+    },
+    {
+      "messageId": "thought-agent_thinking-1779355172611",
+      "role": "thought",
+      "content": "Analyzing your request and deciding which tools to use...",
+      "kind": "thought",
+      "error": null,
+      "meta": [
+        "agent_thinking",
+        "requestId:req-ws-1779355167445-4b3911",
+        "messageId:message-5"
+      ],
+      "metadata": [
+        "agent_thinking",
+        "requestId:req-ws-1779355167445-4b3911",
+        "messageId:message-5"
+      ],
+      "createdAt": "2026-05-21T09:19:32.611+00:00",
+      "updatedAt": "2026-05-21T09:19:32.611+00:00"
+    },
+    {
+      "messageId": "thought-agent_tool_result-1779355172608",
+      "role": "thought",
+      "content": "planner returned data. Incorporating it into my thinking...",
+      "kind": "thought",
+      "error": null,
+      "meta": [
+        "agent_tool_result",
+        "requestId:req-ws-1779355167445-4b3911",
+        "messageId:message-5"
+      ],
+      "metadata": [
+        "agent_tool_result",
+        "requestId:req-ws-1779355167445-4b3911",
+        "messageId:message-5"
+      ],
+      "createdAt": "2026-05-21T09:19:32.608+00:00",
+      "updatedAt": "2026-05-21T09:19:32.608+00:00"
+    },
+    {
+      "messageId": "thought-agent_tool_called-1779355172607",
+      "role": "thought",
+      "content": "Calling planner — let me see if the fix works...",
+      "kind": "thought",
+      "error": null,
+      "meta": [
+        "agent_tool_called",
+        "requestId:req-ws-1779355167445-4b3911",
+        "messageId:message-5"
+      ],
+      "metadata": [
+        "agent_tool_called",
+        "requestId:req-ws-1779355167445-4b3911",
+        "messageId:message-5"
+      ],
+      "createdAt": "2026-05-21T09:19:32.607+00:00",
+      "updatedAt": "2026-05-21T09:19:32.607+00:00"
+    },
+    {
+      "messageId": "thought-agent_thinking-1779355172593",
+      "role": "thought",
+      "content": "Planning the best approach — let me think through the steps.",
+      "kind": "thought",
+      "error": null,
+      "meta": [
+        "agent_thinking",
+        "requestId:req-ws-1779355167445-4b3911",
+        "messageId:message-5"
+      ],
+      "metadata": [
+        "agent_thinking",
+        "requestId:req-ws-1779355167445-4b3911",
+        "messageId:message-5"
+      ],
+      "createdAt": "2026-05-21T09:19:32.593+00:00",
+      "updatedAt": "2026-05-21T09:19:32.593+00:00"
+    },
+    {
+      "messageId": "thought-turn_started-1779355171083",
+      "role": "thought",
+      "content": "Okay, let me dive into this. I'll start by understanding what kind of visual you want.",
+      "kind": "thought",
+      "error": null,
+      "meta": [
+        "turn_started",
+        "requestId:req-ws-1779355167445-4b3911",
+        "messageId:message-5"
+      ],
+      "metadata": [
+        "turn_started",
+        "requestId:req-ws-1779355167445-4b3911",
+        "messageId:message-5"
+      ],
+      "createdAt": "2026-05-21T09:19:31.084+00:00",
+      "updatedAt": "2026-05-21T09:19:31.084+00:00"
+    },
+    {
+      "messageId": "message-5",
+      "role": "assistant",
+      "content": "Agent encountered an error: Execution retry failed: undefined",
+      "kind": "agent",
+      "error": null,
+      "meta": [
+        "assistantSource:agent-coordinator"
+      ],
+      "metadata": [],
+      "createdAt": "2026-05-21T09:19:29.855+00:00",
+      "updatedAt": "2026-05-21T09:21:50.586+00:00"
+    },
+    {
+      "messageId": "user-8104fe66-2422-4c10-9f5c-37070cca4f39",
+      "role": "user",
+      "content": "show me a particle sysem",
+      "kind": "input",
+      "error": null,
+      "meta": [],
+      "metadata": {},
+      "createdAt": "2026-05-21T09:19:27.636+00:00",
+      "updatedAt": "2026-05-21T09:19:27.636+00:00"
+    },
+    {
+      "messageId": "thought-turn_started-1779355107957",
+      "role": "thought",
+      "content": "Alright, I'm reading through your request now. Let me break this down.",
+      "kind": "thought",
+      "error": null,
+      "meta": [
+        "turn_started",
+        "requestId:req-ws-1779355104923-b63544",
+        "messageId:message-2"
+      ],
+      "metadata": [
+        "turn_started",
+        "requestId:req-ws-1779355104923-b63544",
+        "messageId:message-2"
+      ],
+      "createdAt": "2026-05-21T09:18:27.957+00:00",
+      "updatedAt": "2026-05-21T09:18:27.957+00:00"
+    },
+    {
+      "messageId": "message-2",
+      "role": "assistant",
+      "content": "",
+      "kind": "streaming",
+      "error": null,
+      "meta": [
+        "requestId:req-ws-1779355104923-b63544"
+      ],
+      "metadata": [],
+      "createdAt": "2026-05-21T09:18:26.923+00:00",
+      "updatedAt": "2026-05-21T09:18:27.403+00:00"
+    },
+    {
+      "messageId": "user-74f44575-2f7d-4ff6-b793-e43e363609b1",
+      "role": "user",
+      "content": "show me a particle system",
+      "kind": "input",
+      "error": null,
+      "meta": [],
+      "metadata": {},
+      "createdAt": "2026-05-21T09:18:25.108+00:00",
+      "updatedAt": "2026-05-21T09:18:25.108+00:00"
+    },
+    {
+      "messageId": "user-07900104-e6bd-4154-a3a4-2f616b1dfa59",
+      "role": "user",
+      "content": "try again",
+      "kind": "input",
+      "metadata": {},
+      "createdAt": "2026-05-21T10:11:47.540Z",
+      "updatedAt": "2026-05-21T10:11:47.540Z"
+    },
+    {
+      "messageId": "message-25",
+      "role": "assistant",
+      "content": "",
+      "kind": "streaming",
+      "meta": [
+        "requestId:req-ws-1779358307343-ccc2e4"
+      ],
+      "metadata": [],
+      "createdAt": "2026-05-21T10:11:49.057Z",
+      "updatedAt": "2026-05-21T10:11:49.660Z"
+    },
+    {
+      "messageId": "thought-turn_started-1779358310155",
+      "role": "thought",
+      "content": "Okay, let me dive into this. I'll start by understanding what kind of visual you want.",
+      "kind": "thought",
+      "meta": [
+        "turn_started",
+        "requestId:req-ws-1779358307343-ccc2e4",
+        "messageId:message-25"
+      ],
+      "metadata": [
+        "turn_started",
+        "requestId:req-ws-1779358307343-ccc2e4",
+        "messageId:message-25"
+      ],
+      "createdAt": "2026-05-21T10:11:50.155Z",
+      "updatedAt": "2026-05-21T10:11:50.155Z"
+    }
+  ],
+  "orchestrationTrace": [],
+  "createdAt": "2026-05-21T09:21:51.456+00:00",
+  "updatedAt": "2026-05-21T10:11:50.155Z"
+}

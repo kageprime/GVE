@@ -20,6 +20,7 @@ interface SceneViewerProps {
   onError?: (error: string) => void;
   onExpand?: () => void;
   streaming?: boolean;
+  paused?: boolean;
 }
 
 const CDN_VENDOR_FILES: Record<string, string[]> = {
@@ -1118,7 +1119,7 @@ try {
 </html>`;
 }
 
-const SceneViewer = forwardRef<SceneViewerRef, SceneViewerProps>(({ code, skill, files, fileSkills, onError, onExpand, streaming = false }, ref) => {
+const SceneViewer = forwardRef<SceneViewerRef, SceneViewerProps>(({ code, skill, files, fileSkills, onError, onExpand, streaming = false, paused }, ref) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [runtimeError, setRuntimeError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -1134,6 +1135,7 @@ const SceneViewer = forwardRef<SceneViewerRef, SceneViewerProps>(({ code, skill,
 
   // Debounce timer for streaming mode
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const renderCleanupRef = useRef<(() => void) | null>(null);
 
   // Batch iframe postMessages to avoid long message handlers
   const messageQueueRef = useRef<MessageEvent['data'][]>([]);
@@ -1232,8 +1234,8 @@ const SceneViewer = forwardRef<SceneViewerRef, SceneViewerProps>(({ code, skill,
   }, [onError, streaming]);
 
   // Render scene when code/skill or files change
-  // During streaming we skip iframe rebuilds entirely — the code editor shows live
-  // progress, and we only build the 3D scene once streaming finishes.
+  // During streaming we debounce iframe rebuilds so the scene appears quickly
+  // (150ms for first render) without flashing on every single delta (600ms once rendered).
   useEffect(() => {
     const isMultiSkill = files && fileSkills && Object.keys(files).length > 0;
     const hasSingle = code && skill;
@@ -1244,16 +1246,16 @@ const SceneViewer = forwardRef<SceneViewerRef, SceneViewerProps>(({ code, skill,
     }
     if (!iframeRef.current) return;
 
-    // Skip iframe rebuilds while streaming — just show the building indicator
-    if (streaming) {
-      setIsBuilding(true);
-      return;
-    }
-
-    // Cancel any pending debounced render from a previous streaming burst
+    // Cancel any pending debounced render
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
       debounceTimerRef.current = null;
+    }
+
+    // Run any previous render cleanup
+    if (renderCleanupRef.current) {
+      renderCleanupRef.current();
+      renderCleanupRef.current = null;
     }
 
     const executeRender = () => {
@@ -1317,7 +1319,30 @@ const SceneViewer = forwardRef<SceneViewerRef, SceneViewerProps>(({ code, skill,
       };
     };
 
-    return executeRender();
+    // Render immediately — no artificial streaming delay
+    const delayMs = 0;
+
+    if (delayMs > 0) {
+      setIsBuilding(true);
+      debounceTimerRef.current = setTimeout(() => {
+        debounceTimerRef.current = null;
+        renderCleanupRef.current = executeRender();
+      }, delayMs);
+      return () => {
+        if (debounceTimerRef.current) {
+          clearTimeout(debounceTimerRef.current);
+          debounceTimerRef.current = null;
+        }
+      };
+    }
+
+    renderCleanupRef.current = executeRender();
+    return () => {
+      if (renderCleanupRef.current) {
+        renderCleanupRef.current();
+        renderCleanupRef.current = null;
+      }
+    };
   }, [code, skill, files, fileSkills, streaming]);
 
   useEffect(() => {
@@ -1329,14 +1354,25 @@ const SceneViewer = forwardRef<SceneViewerRef, SceneViewerProps>(({ code, skill,
   }, [isGridEnabled]);
 
   const postControl = useCallback((command: string, payload: Record<string, unknown> = {}) => {
-    const frameWindow = iframeRef.current?.contentWindow;
-    if (!frameWindow) return;
+    try {
+      const frameWindow = iframeRef.current?.contentWindow;
+      if (!frameWindow) return;
 
-    frameWindow.postMessage(
-      { type: "scene:control", payload: { command, ...payload } },
-      "*"
-    );
+      frameWindow.postMessage(
+        { type: "scene:control", payload: { command, ...payload } },
+        "*"
+      );
+    } catch {
+      // Chrome extension may intercept postMessage and fail when iframe is destroyed
+    }
   }, []);
+
+  useEffect(() => {
+    if (typeof paused === "undefined") return;
+    const iframe = iframeRef.current;
+    if (!iframe || !iframe.contentWindow || !document.body.contains(iframe)) return;
+    postControl(paused ? "pause" : "play");
+  }, [paused, postControl]);
 
   const handleZoomIn = () => postControl("zoom_in");
   const handleZoomOut = () => postControl("zoom_out");

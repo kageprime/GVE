@@ -101,8 +101,7 @@ State Sync → WebSocket → React Frontend
 ├── apps/
 │   ├── server/          # Express + WebSocket backend (TypeScript, ESM)
 │   │   ├── server/      # Core logic: routes, agents, skills, sandbox, state, db
-│   │   ├── scripts/     # Regression and soak tests
-│   │   └── docs/        # OpenAPI spec
+│   │   └── scripts/     # Regression and soak tests
 │   ├── web/             # React 19 + Vite frontend (TypeScript, Tailwind v4)
 │   │   ├── src/pages/   # Chat, Scenes, Sessions, Tasks, Profile, Auth
 │   │   ├── src/stores/  # Zustand state management

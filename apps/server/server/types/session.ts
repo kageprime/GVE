@@ -47,6 +47,7 @@ export interface SceneVersion {
   previewUrl: string | null;
   skill: string | null;
   outputKind: string | null;
+  explanation?: string | null;
   mediaType: string | null;
   mediaUrl: string | null;
   workspace: WorkspaceRecord | null;
